@@ -1,428 +1,425 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Our Little World 💕</title>
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap');
-    
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-    @keyframes fadeUp {
-    0% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-30px); }
-}
-    body {
-        font-family: 'Nunito', sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden;
-    }
-    
-    #gameContainer {
-        width: 95vw;
-        max-width: 900px;
-        height: 95vh;
-        max-height: 800px;
-        background: #fff;
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        overflow: hidden;
-        position: relative;
-    }
-    
-    /* Character Creation Screen - FIXED */
-    #charCreator {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(180deg, #ffeef8 0%, #ffe0f0 100%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        z-index: 100;
-        transition: opacity 0.5s;
-        overflow-y: auto;
-        padding: 20px;
-    }
-    
-    #charCreator.hidden {
-        opacity: 0;
-        pointer-events: none;
-    }
-    
-    .creator-title {
-        font-size: 2em;
-        color: #d63384;
-        margin-bottom: 5px;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        text-align: center;
-    }
-    
-    .creator-subtitle {
-        color: #888;
-        margin-bottom: 15px;
-        font-size: 0.9em;
-        text-align: center;
-    }
-    
-    .preview-box {
-        width: 80px;
-        height: 80px;
-        background: white;
-        border-radius: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        font-size: 40px;
-    }
-    
-    .customize-section {
-        background: white;
-        padding: 15px;
-        border-radius: 12px;
-        margin: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        width: 100%;
-        max-width: 400px;
-    }
-    
-    .color-options, .accessory-options {
-        display: flex;
-        gap: 8px;
-        margin-top: 8px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    
-    .color-btn, .acc-btn {
-        width: 35px;
-        height: 35px;
-        border: 3px solid transparent;
-        border-radius: 50%;
-        cursor: pointer;
-        transition: transform 0.2s, border-color 0.2s;
-    }
-    
-    .color-btn:hover, .acc-btn:hover {
-        transform: scale(1.1);
-    }
-    
-    .color-btn.selected, .acc-btn.selected {
-        border-color: #333;
-        transform: scale(1.15);
-    }
-    
-    .acc-btn {
-        font-size: 18px;
-        background: #f0f0f0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    input[type="text"] {
-        padding: 10px 15px;
-        border: 2px solid #ddd;
-        border-radius: 20px;
-        font-size: 14px;
-        width: 100%;
-        max-width: 200px;
-        text-align: center;
-        margin: 5px 0;
-        font-family: 'Nunito', sans-serif;
-    }
-    
-    .start-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: 12px 30px;
-        border-radius: 25px;
-        font-size: 16px;
-        cursor: pointer;
-        margin: 15px 0;
-        font-family: 'Nunito', sans-serif;
-        font-weight: 700;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .start-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-    }
-    
-    /* Game World */
-    #gameWorld {
-        width: 100%;
-        height: 100%;
-        display: none;
-        position: relative;
-    }
-    
-    #gameWorld.active {
-        display: block;
-    }
-    
-    canvas {
-        display: block;
-        background: #87CEEB;
-    }
-    
-    /* UI Overlay */
-    #ui {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-    }
-    
-    .ui-element {
-        pointer-events: auto;
-    }
-    
-    #areaName {
-        position: absolute;
-        top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(255,255,255,0.9);
-        padding: 8px 20px;
-        border-radius: 15px;
-        font-weight: 700;
-        color: #333;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        font-size: 14px;
-    }
-    
-    #inventoryBtn {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: white;
-        border: none;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        font-size: 20px;
-        cursor: pointer;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
-    }
-    
-    #inventoryBtn:hover {
-        transform: scale(1.1);
-    }
-    
-    #inventoryBtn.has-new::after {
-        content: '';
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        width: 10px;
-        height: 10px;
-        background: #ff4757;
-        border-radius: 50%;
-        animation: pulse 1.5s infinite;
-    }
-    
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.3); opacity: 0.7; }
-    }
-    
-    #messagePanel {
-        position: absolute;
-        bottom: 80px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(255,255,255,0.95);
-        padding: 15px;
-        border-radius: 12px;
-        max-width: 300px;
-        text-align: center;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        opacity: 0;
-        transition: opacity 0.3s, transform 0.3s;
-        pointer-events: none;
-    }
-    
-    #messagePanel.show {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-        pointer-events: auto;
-    }
-    
-    #messagePanel.from-partner {
-        border: 3px solid #ff6b9d;
-        animation: gentle-bounce 2s infinite;
-    }
-    
-    @keyframes gentle-bounce {
-        0%, 100% { transform: translateX(-50%) translateY(0); }
-        50% { transform: translateX(-50%) translateY(-5px); }
-    }
-    
-    .message-sender {
-        color: #ff6b9d;
-        font-weight: 700;
-        font-size: 0.85em;
-        margin-bottom: 5px;
-    }
-    
-    .gift-display {
-        font-size: 35px;
-        margin: 8px 0;
-        animation: float 3s ease-in-out infinite;
-    }
-    
-    @keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
-    }
-    
-    /* Inventory Modal */
-    #inventoryModal {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.5);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 50;
-    }
-    
-    #inventoryModal.show {
-        display: flex;
-    }
-    
-    .inventory-content {
-        background: white;
-        width: 90%;
-        max-width: 400px;
-        max-height: 70%;
-        border-radius: 15px;
-        padding: 20px;
-        overflow-y: auto;
-        animation: slide-up 0.3s;
-    }
-    
-    @keyframes slide-up {
-        from { transform: translateY(50px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    
-    .inventory-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-    }
-    
-    .inventory-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-        gap: 10px;
-    }
-    
-    .inventory-item {
-        aspect-ratio: 1;
-        background: #f8f9fa;
-        border-radius: 12px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: transform 0.2s, background 0.2s;
-        padding: 8px;
-        text-align: center;
-    }
-    
-    .inventory-item:hover {
-        transform: scale(1.05);
-        background: #e9ecef;
-    }
-    
-    .inventory-item .emoji {
-        font-size: 25px;
-        margin-bottom: 3px;
-    }
-    
-    .inventory-item .name {
-        font-size: 10px;
-        color: #666;
-    }
-    
-    .close-btn {
-        background: none;
-        border: none;
-        font-size: 20px;
-        cursor: pointer;
-        color: #999;
-    }
-    
-    /* Controls hint */
-    #controls {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        background: rgba(255,255,255,0.8);
-        padding: 8px 12px;
-        border-radius: 8px;
-        font-size: 11px;
-        color: #666;
-    }
-    
-    kbd {
-        background: #eee;
-        padding: 2px 5px;
-        border-radius: 3px;
-        font-family: monospace;
-        font-size: 10px;
-    }
-    
-    /* Notification */
-    #notification {
-        position: absolute;
-        top: 60px;
-        right: 10px;
-        background: #ff6b9d;
-        color: white;
-        padding: 12px 15px;
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(255,107,157,0.4);
-        transform: translateX(400px);
-        transition: transform 0.3s;
-        z-index: 60;
-        font-size: 14px;
-    }
-    
-    #notification.show {
-        transform: translateX(0);
-    }
-</style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        #gameContainer {
+            width: 95vw;
+            max-width: 900px;
+            height: 95vh;
+            max-height: 800px;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #charCreator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #ffeef8 0%, #ffe0f0 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            z-index: 100;
+            transition: opacity 0.5s;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        #charCreator.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .creator-title {
+            font-size: 2em;
+            color: #d63384;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .creator-subtitle {
+            color: #888;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            text-align: center;
+        }
+        
+        .preview-box {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            font-size: 40px;
+        }
+        
+        .customize-section {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .color-options, .accessory-options {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .color-btn, .acc-btn {
+            width: 35px;
+            height: 35px;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        
+        .color-btn:hover, .acc-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-btn.selected, .acc-btn.selected {
+            border-color: #333;
+            transform: scale(1.15);
+        }
+        
+        .acc-btn {
+            font-size: 18px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        input[type="text"] {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            width: 100%;
+            max-width: 200px;
+            text-align: center;
+            margin: 5px 0;
+            font-family: 'Nunito', sans-serif;
+        }
+        
+        .start-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 15px 0 30px 0;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        #gameWorld {
+            width: 100%;
+            height: 100%;
+            display: none;
+            position: relative;
+        }
+        
+        #gameWorld.active {
+            display: block;
+        }
+        
+        canvas {
+            display: block;
+            background: #87CEEB;
+            touch-action: none;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .ui-element {
+            pointer-events: auto;
+        }
+        
+        #areaName {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.9);
+            padding: 8px 20px;
+            border-radius: 15px;
+            font-weight: 700;
+            color: #333;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 14px;
+        }
+        
+        #inventoryBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        #inventoryBtn:hover {
+            transform: scale(1.1);
+        }
+        
+        #inventoryBtn.has-new::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 10px;
+            height: 10px;
+            background: #ff4757;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+        
+        #messagePanel {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            padding: 15px;
+            border-radius: 12px;
+            max-width: 300px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+        }
+        
+        #messagePanel.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+        
+        #messagePanel.from-partner {
+            border: 3px solid #ff6b9d;
+            animation: gentle-bounce 2s infinite;
+        }
+        
+        @keyframes gentle-bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-5px); }
+        }
+        
+        .message-sender {
+            color: #ff6b9d;
+            font-weight: 700;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+        
+        .gift-display {
+            font-size: 35px;
+            margin: 8px 0;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        #inventoryModal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        
+        #inventoryModal.show {
+            display: flex;
+        }
+        
+        .inventory-content {
+            background: white;
+            width: 90%;
+            max-width: 400px;
+            max-height: 70%;
+            border-radius: 15px;
+            padding: 20px;
+            overflow-y: auto;
+            animation: slide-up 0.3s;
+        }
+        
+        @keyframes slide-up {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .inventory-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 10px;
+        }
+        
+        .inventory-item {
+            aspect-ratio: 1;
+            background: #f8f9fa;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .inventory-item:hover {
+            transform: scale(1.05);
+            background: #e9ecef;
+        }
+        
+        .inventory-item .emoji {
+            font-size: 25px;
+            margin-bottom: 3px;
+        }
+        
+        .inventory-item .name {
+            font-size: 10px;
+            color: #666;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.8);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            color: #666;
+        }
+        
+        kbd {
+            background: #eee;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 10px;
+        }
+        
+        #notification {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            background: #ff6b9d;
+            color: white;
+            padding: 12px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(255,107,157,0.4);
+            transform: translateX(400px);
+            transition: transform 0.3s;
+            z-index: 60;
+            font-size: 14px;
+        }
+        
+        #notification.show {
+            transform: translateX(0);
+        }
+        
+        @keyframes fadeUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-30px); }
+        }
+    </style>
 </head>
 <body>
     <div id="gameContainer">
-        <!-- Character Creator -->
         <div id="charCreator">
             <h1 class="creator-title">Welcome to Our World 🌍</h1>
             <p class="creator-subtitle">Create your character to begin the adventure</p>
@@ -463,7 +460,6 @@
             <button class="start-btn" onclick="startGame()">Enter World 💫</button>
         </div>
         
-        <!-- Game World -->
         <div id="gameWorld">
             <canvas id="gameCanvas"></canvas>
             
@@ -478,8 +474,8 @@
                 </div>
                 
                 <div id="controls">
-                    Move: <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><br>
-                    Interact: <kbd>Space</kbd>
+                    Move: <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or touch<br>
+                    Action: <kbd>Space</kbd> or 💫 button
                 </div>
             </div>
             
@@ -489,9 +485,7 @@
                         <h2>Your Treasures 🎁</h2>
                         <button class="close-btn" onclick="toggleInventory()">✕</button>
                     </div>
-                    <div class="inventory-grid" id="inventoryGrid">
-                        <!-- Items populated by JS -->
-                    </div>
+                    <div class="inventory-grid" id="inventoryGrid"></div>
                 </div>
             </div>
             
@@ -501,29 +495,33 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <script>
-        // ==================== CONFIGURATION ====================
         const firebaseConfig = {
-            // YOUR FIREBASE CONFIG HERE
-       const firebaseConfig = {
-              apiKey: "AIzaSyBmLF7qqeSotu6Rhkx3SXxxxhcqpHL7p2k",
-              authDomain: "kova-85c6b.firebaseapp.com",
-              databaseURL: "https://kova-85c6b-default-rtdb.europe-west1.firebasedatabase.app ",
-              projectId: "kova-85c6b",
-              storageBucket: "kova-85c6b.firebasestorage.app",
-              messagingSenderId: "472789298075",
-              appId: "1:472789298075:web:5e6a85924ea1fe269e0f3e",
-              measurementId: "G-FZR41E5810" 
+            apiKey: "AIzaSyBmLF7qqeSotu6Rhkx3SXxxxhcqpHL7p2k",
+            authDomain: "kova-85c6b.firebaseapp.com",
+            databaseURL: "https://kova-85c6b-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "kova-85c6b",
+            storageBucket: "kova-85c6b.firebasestorage.app",
+            messagingSenderId: "472789298075",
+            appId: "1:472789298075:web:5e6a85924ea1fe269e0f3e"
         };
         
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        let database;
+        let giftsRef;
         
-        // ==================== GAME STATE ====================
+        try {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            giftsRef = database.ref('gifts');
+            console.log("Firebase connected!");
+        } catch (e) {
+            console.error("Firebase error:", e);
+            database = null;
+        }
+        
         const gameState = {
             player: {
                 x: 400,
@@ -542,15 +540,11 @@
                 { name: "Moonlight Park 🌙", color: "#191970", emoji: "🌙" }
             ],
             gifts: [],
-            messages: [],
             keys: {},
-            lastGiftCheck: 0,
-            touchStartX: 0,
-            touchStartY: 0,
-            isTouching: false
+            collectedGiftIds: new Set(),
+            joystick: { active: false, dx: 0, dy: 0, originX: 0, originY: 0 }
         };
         
-        // ==================== CHARACTER CREATION ====================
         let selectedColor = '#ffdbac';
         let selectedAcc = '';
         
@@ -609,10 +603,8 @@
             }, 500);
         }
         
-        // ==================== GAME ENGINE ====================
         let canvas, ctx;
         let animationId;
-        let joystick = { active: false, dx: 0, dy: 0, originX: 0, originY: 0 };
         
         function initGame() {
             canvas = document.getElementById('gameCanvas');
@@ -621,29 +613,41 @@
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
             
-            // Keyboard controls
             window.addEventListener('keydown', (e) => {
                 gameState.keys[e.key] = true;
                 if (e.key === ' ') checkInteractions();
             });
             window.addEventListener('keyup', (e) => gameState.keys[e.key] = false);
             
-            // Touch controls
             setupTouchControls();
             
-            // Start loops
-            gameLoop();
-            listenForGifts();
+            loadCollectedGifts();
             loadInventory();
+            
+            if (database) {
+                listenForGifts();
+            }
+            
+            gameLoop();
+        }
+        
+        function loadCollectedGifts() {
+            const saved = localStorage.getItem('ourWorld_collectedIds');
+            if (saved) {
+                const ids = JSON.parse(saved);
+                ids.forEach(id => gameState.collectedGiftIds.add(id));
+            }
+        }
+        
+        function saveCollectedGifts() {
+            localStorage.setItem('ourWorld_collectedIds', JSON.stringify([...gameState.collectedGiftIds]));
         }
         
         function setupTouchControls() {
-            // Touch movement - joystick style
             canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
             canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
             canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
             
-            // Prevent scrolling on mobile
             document.body.addEventListener('touchmove', (e) => {
                 if (e.target === canvas) e.preventDefault();
             }, {passive: false});
@@ -654,7 +658,6 @@
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
             
-            // Check if touching right side (action button area)
             if (touch.clientX - rect.left > canvas.width * 0.7 && 
                 touch.clientY - rect.top > canvas.height * 0.6) {
                 checkInteractions();
@@ -662,17 +665,16 @@
                 return;
             }
             
-            // Start joystick on left side
-            joystick.active = true;
-            joystick.originX = touch.clientX - rect.left;
-            joystick.originY = touch.clientY - rect.top;
-            joystick.dx = 0;
-            joystick.dy = 0;
+            gameState.joystick.active = true;
+            gameState.joystick.originX = touch.clientX - rect.left;
+            gameState.joystick.originY = touch.clientY - rect.top;
+            gameState.joystick.dx = 0;
+            gameState.joystick.dy = 0;
         }
         
         function handleTouchMove(e) {
             e.preventDefault();
-            if (!joystick.active) return;
+            if (!gameState.joystick.active) return;
             
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
@@ -680,8 +682,8 @@
             const touchY = touch.clientY - rect.top;
             
             const maxDist = 60;
-            let dx = touchX - joystick.originX;
-            let dy = touchY - joystick.originY;
+            let dx = touchX - gameState.joystick.originX;
+            let dy = touchY - gameState.joystick.originY;
             
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist > maxDist) {
@@ -689,19 +691,18 @@
                 dy = (dy / dist) * maxDist;
             }
             
-            joystick.dx = dx / maxDist;
-            joystick.dy = dy / maxDist;
+            gameState.joystick.dx = dx / maxDist;
+            gameState.joystick.dy = dy / maxDist;
         }
         
         function handleTouchEnd(e) {
             e.preventDefault();
-            joystick.active = false;
-            joystick.dx = 0;
-            joystick.dy = 0;
+            gameState.joystick.active = false;
+            gameState.joystick.dx = 0;
+            gameState.joystick.dy = 0;
         }
         
         function showTouchFeedback(x, y, emoji) {
-            // Visual feedback for touch
             const feedback = document.createElement('div');
             feedback.style.cssText = `
                 position: absolute;
@@ -731,7 +732,6 @@
         function update() {
             const speed = 3;
             
-            // Keyboard movement
             if (gameState.keys['ArrowUp'] || gameState.keys['w'] || gameState.keys['W']) {
                 gameState.player.y -= speed;
             }
@@ -745,13 +745,11 @@
                 gameState.player.x += speed;
             }
             
-            // Touch/joystick movement
-            if (joystick.active) {
-                gameState.player.x += joystick.dx * speed;
-                gameState.player.y += joystick.dy * speed;
+            if (gameState.joystick.active) {
+                gameState.player.x += gameState.joystick.dx * speed;
+                gameState.player.y += gameState.joystick.dy * speed;
             }
             
-            // Boundary check
             gameState.player.x = Math.max(30, Math.min(canvas.width - 30, gameState.player.x));
             gameState.player.y = Math.max(30, Math.min(canvas.height - 30, gameState.player.y));
             
@@ -782,7 +780,6 @@
         function render() {
             const area = gameState.areas[gameState.player.currentArea];
             
-            // Background
             ctx.fillStyle = area.color;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
@@ -864,8 +861,8 @@
         }
         
         function drawGroundGifts() {
-            gameState.gifts.forEach((gift, index) => {
-                if (gift.area === gameState.player.currentArea && !gift.collected) {
+            gameState.gifts.forEach((gift) => {
+                if (gift.area === gameState.player.currentArea && !gift.collected && !gameState.collectedGiftIds.has(gift.id)) {
                     ctx.font = '35px Arial';
                     ctx.fillText(gift.emoji, gift.x, gift.y);
                     
@@ -874,29 +871,26 @@
                     const dist = Math.sqrt(dx*dx + dy*dy);
                     
                     if (dist < 40) {
-                        collectGift(index);
+                        collectGift(gift);
                     }
                 }
             });
         }
         
         function drawTouchControls() {
-            // Only show on touch devices or when touching
-            if (!joystick.active && !('ontouchstart' in window)) return;
+            if (!gameState.joystick.active && !('ontouchstart' in window)) return;
             
-            if (joystick.active) {
-                // Draw joystick base
+            if (gameState.joystick.active) {
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
                 ctx.beginPath();
-                ctx.arc(joystick.originX, joystick.originY, 60, 0, Math.PI * 2);
+                ctx.arc(gameState.joystick.originX, gameState.joystick.originY, 60, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
                 ctx.lineWidth = 2;
                 ctx.stroke();
                 
-                // Draw joystick handle
-                const handleX = joystick.originX + joystick.dx * 60;
-                const handleY = joystick.originY + joystick.dy * 60;
+                const handleX = gameState.joystick.originX + gameState.joystick.dx * 60;
+                const handleY = gameState.joystick.originY + gameState.joystick.dy * 60;
                 
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
                 ctx.beginPath();
@@ -907,7 +901,6 @@
                 ctx.stroke();
             }
             
-            // Draw action button hint
             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.beginPath();
             ctx.arc(canvas.width - 60, canvas.height - 60, 40, 0, Math.PI * 2);
@@ -922,42 +915,46 @@
             ctx.fillText('💫', canvas.width - 60, canvas.height - 55);
         }
         
-        // ==================== GIFT SYSTEM ====================
         function listenForGifts() {
-            const giftsRef = database.ref('gifts');
             giftsRef.on('child_added', (snapshot) => {
                 const gift = snapshot.val();
-                if (gift.timestamp > gameState.lastGiftCheck) {
-                    addGiftToWorld(gift);
+                const giftId = snapshot.key;
+                
+                if (!gameState.collectedGiftIds.has(giftId)) {
+                    addGiftToWorld(gift, giftId);
                     showNotification('New gift arrived! 🎁');
                     document.getElementById('inventoryBtn').classList.add('has-new');
                 }
             });
         }
         
-        function addGiftToWorld(gift) {
-            const area = gift.area || Math.floor(Math.random() * gameState.areas.length);
+        function addGiftToWorld(gift, giftId) {
+            const area = gift.area !== undefined ? gift.area : Math.floor(Math.random() * gameState.areas.length);
             const newGift = {
                 ...gift,
+                id: giftId,
                 x: 100 + Math.random() * (canvas.width - 200),
                 y: 100 + Math.random() * (canvas.height - 200),
                 area: area,
-                collected: false,
-                id: Date.now() + Math.random()
+                collected: false
             };
             gameState.gifts.push(newGift);
         }
         
-        function collectGift(index) {
-            const gift = gameState.gifts[index];
+        function collectGift(gift) {
+            if (gameState.collectedGiftIds.has(gift.id)) return;
+            
             gift.collected = true;
+            gameState.collectedGiftIds.add(gift.id);
+            saveCollectedGifts();
             
             gameState.player.inventory.push({
                 emoji: gift.emoji,
                 name: gift.name || 'Mystery Gift',
                 message: gift.message,
                 from: gift.from || 'Your Love',
-                date: new Date().toLocaleDateString()
+                date: new Date().toLocaleDateString(),
+                id: gift.id
             });
             
             saveInventory();
@@ -983,7 +980,6 @@
             setTimeout(() => notif.classList.remove('show'), 3000);
         }
         
-        // ==================== INVENTORY ====================
         function toggleInventory() {
             const modal = document.getElementById('inventoryModal');
             modal.classList.toggle('show');
@@ -1033,7 +1029,6 @@
             showNotification(`You're in the ${area.name.split(' ')[0]}! ${area.emoji}`);
         }
         
-        // ==================== LOCAL STORAGE ====================
         function saveInventory() {
             localStorage.setItem('ourWorld_inventory', JSON.stringify(gameState.player.inventory));
             localStorage.setItem('ourWorld_player', JSON.stringify({
