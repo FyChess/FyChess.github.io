@@ -62,7 +62,6 @@
             font-size: 2em;
             color: #d63384;
             margin-bottom: 5px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
             text-align: center;
         }
         
@@ -474,8 +473,8 @@
                 </div>
                 
                 <div id="controls">
-                    Move: <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or touch<br>
-                    Action: <kbd>Space</kbd> or 💫 button
+                    Move: <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><br>
+                    Interact: <kbd>Space</kbd>
                 </div>
             </div>
             
@@ -499,6 +498,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <script>
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBmLF7qqeSotu6Rhkx3SXxxxhcqpHL7p2k",
             authDomain: "kova-85c6b.firebaseapp.com",
@@ -509,19 +509,20 @@
             appId: "1:472789298075:web:5e6a85924ea1fe269e0f3e"
         };
         
-        let database;
-        let giftsRef;
+        // Initialize Firebase
+        let database = null;
+        let giftsRef = null;
         
         try {
             firebase.initializeApp(firebaseConfig);
             database = firebase.database();
             giftsRef = database.ref('gifts');
-            console.log("Firebase connected!");
+            console.log("Firebase connected successfully!");
         } catch (e) {
-            console.error("Firebase error:", e);
-            database = null;
+            console.error("Firebase initialization failed:", e);
         }
         
+        // Game state
         const gameState = {
             player: {
                 x: 400,
@@ -548,20 +549,21 @@
         let selectedColor = '#ffdbac';
         let selectedAcc = '';
         
+        // Event listeners for character creation
         document.querySelectorAll('.color-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', function() {
                 document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                selectedColor = btn.dataset.color;
+                this.classList.add('selected');
+                selectedColor = this.dataset.color;
                 updatePreview();
             });
         });
         
         document.querySelectorAll('.acc-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', function() {
                 document.querySelectorAll('.acc-btn').forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                selectedAcc = btn.dataset.acc;
+                this.classList.add('selected');
+                selectedAcc = this.dataset.acc;
                 updatePreview();
             });
         });
@@ -596,7 +598,7 @@
             else if (selectedAcc === 'hat') gameState.player.emoji = '🕵️';
             
             document.getElementById('charCreator').classList.add('hidden');
-            setTimeout(() => {
+            setTimeout(function() {
                 document.getElementById('charCreator').style.display = 'none';
                 document.getElementById('gameWorld').classList.add('active');
                 initGame();
@@ -604,7 +606,6 @@
         }
         
         let canvas, ctx;
-        let animationId;
         
         function initGame() {
             canvas = document.getElementById('gameCanvas');
@@ -613,14 +614,16 @@
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
             
-            window.addEventListener('keydown', (e) => {
+            window.addEventListener('keydown', function(e) {
                 gameState.keys[e.key] = true;
                 if (e.key === ' ') checkInteractions();
             });
-            window.addEventListener('keyup', (e) => gameState.keys[e.key] = false);
+            
+            window.addEventListener('keyup', function(e) {
+                gameState.keys[e.key] = false;
+            });
             
             setupTouchControls();
-            
             loadCollectedGifts();
             loadInventory();
             
@@ -635,12 +638,14 @@
             const saved = localStorage.getItem('ourWorld_collectedIds');
             if (saved) {
                 const ids = JSON.parse(saved);
-                ids.forEach(id => gameState.collectedGiftIds.add(id));
+                ids.forEach(function(id) {
+                    gameState.collectedGiftIds.add(id);
+                });
             }
         }
         
         function saveCollectedGifts() {
-            localStorage.setItem('ourWorld_collectedIds', JSON.stringify([...gameState.collectedGiftIds]));
+            localStorage.setItem('ourWorld_collectedIds', JSON.stringify(Array.from(gameState.collectedGiftIds)));
         }
         
         function setupTouchControls() {
@@ -648,7 +653,7 @@
             canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
             canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
             
-            document.body.addEventListener('touchmove', (e) => {
+            document.body.addEventListener('touchmove', function(e) {
                 if (e.target === canvas) e.preventDefault();
             }, {passive: false});
         }
@@ -661,7 +666,6 @@
             if (touch.clientX - rect.left > canvas.width * 0.7 && 
                 touch.clientY - rect.top > canvas.height * 0.6) {
                 checkInteractions();
-                showTouchFeedback(touch.clientX - rect.left, touch.clientY - rect.top, '💫');
                 return;
             }
             
@@ -702,22 +706,6 @@
             gameState.joystick.dy = 0;
         }
         
-        function showTouchFeedback(x, y, emoji) {
-            const feedback = document.createElement('div');
-            feedback.style.cssText = `
-                position: absolute;
-                left: ${x}px;
-                top: ${y}px;
-                font-size: 30px;
-                pointer-events: none;
-                animation: fadeUp 0.5s ease-out;
-                z-index: 1000;
-            `;
-            feedback.textContent = emoji;
-            document.getElementById('gameWorld').appendChild(feedback);
-            setTimeout(() => feedback.remove(), 500);
-        }
-        
         function resizeCanvas() {
             canvas.width = document.getElementById('gameWorld').clientWidth;
             canvas.height = document.getElementById('gameWorld').clientHeight;
@@ -726,32 +714,33 @@
         function gameLoop() {
             update();
             render();
-            animationId = requestAnimationFrame(gameLoop);
+            requestAnimationFrame(gameLoop);
         }
         
         function update() {
             const speed = 3;
+            const p = gameState.player;
             
             if (gameState.keys['ArrowUp'] || gameState.keys['w'] || gameState.keys['W']) {
-                gameState.player.y -= speed;
+                p.y -= speed;
             }
             if (gameState.keys['ArrowDown'] || gameState.keys['s'] || gameState.keys['S']) {
-                gameState.player.y += speed;
+                p.y += speed;
             }
             if (gameState.keys['ArrowLeft'] || gameState.keys['a'] || gameState.keys['A']) {
-                gameState.player.x -= speed;
+                p.x -= speed;
             }
             if (gameState.keys['ArrowRight'] || gameState.keys['d'] || gameState.keys['D']) {
-                gameState.player.x += speed;
+                p.x += speed;
             }
             
             if (gameState.joystick.active) {
-                gameState.player.x += gameState.joystick.dx * speed;
-                gameState.player.y += gameState.joystick.dy * speed;
+                p.x += gameState.joystick.dx * speed;
+                p.y += gameState.joystick.dy * speed;
             }
             
-            gameState.player.x = Math.max(30, Math.min(canvas.width - 30, gameState.player.x));
-            gameState.player.y = Math.max(30, Math.min(canvas.height - 30, gameState.player.y));
+            p.x = Math.max(30, Math.min(canvas.width - 30, p.x));
+            p.y = Math.max(30, Math.min(canvas.height - 30, p.y));
             
             checkAreaTransitions();
         }
@@ -794,7 +783,7 @@
             ctx.font = '30px Arial';
             ctx.textAlign = 'center';
             
-            if (area.name.includes('Garden')) {
+            if (area.name.indexOf('Garden') !== -1) {
                 for (let i = 0; i < 5; i++) {
                     ctx.fillText('🌷', 100 + i * 150, 150);
                     ctx.fillText('🌻', 150 + i * 150, 400);
@@ -802,20 +791,20 @@
                 ctx.fillText('🌳', 50, 100);
                 ctx.fillText('🌳', canvas.width - 50, 100);
             }
-            else if (area.name.includes('Café')) {
+            else if (area.name.indexOf('Café') !== -1) {
                 ctx.fillText('🪑', 200, 250);
                 ctx.fillText('🪑', 400, 250);
                 ctx.fillText('🪑', 600, 250);
                 ctx.fillText('☕', 300, 200);
                 ctx.fillText('🥐', 500, 200);
             }
-            else if (area.name.includes('Library')) {
+            else if (area.name.indexOf('Library') !== -1) {
                 ctx.fillText('📚', 150, 200);
                 ctx.fillText('📚', 350, 200);
                 ctx.fillText('📚', 550, 200);
                 ctx.fillText('🪔', canvas.width/2, 150);
             }
-            else if (area.name.includes('Park')) {
+            else if (area.name.indexOf('Park') !== -1) {
                 ctx.fillText('🌙', canvas.width/2, 100);
                 ctx.fillText('⭐', 100, 100);
                 ctx.fillText('⭐', canvas.width - 100, 100);
@@ -861,7 +850,7 @@
         }
         
         function drawGroundGifts() {
-            gameState.gifts.forEach((gift) => {
+            gameState.gifts.forEach(function(gift) {
                 if (gift.area === gameState.player.currentArea && !gift.collected && !gameState.collectedGiftIds.has(gift.id)) {
                     ctx.font = '35px Arial';
                     ctx.fillText(gift.emoji, gift.x, gift.y);
@@ -916,7 +905,7 @@
         }
         
         function listenForGifts() {
-            giftsRef.on('child_added', (snapshot) => {
+            giftsRef.on('child_added', function(snapshot) {
                 const gift = snapshot.val();
                 const giftId = snapshot.key;
                 
@@ -931,7 +920,10 @@
         function addGiftToWorld(gift, giftId) {
             const area = gift.area !== undefined ? gift.area : Math.floor(Math.random() * gameState.areas.length);
             const newGift = {
-                ...gift,
+                emoji: gift.emoji,
+                name: gift.name,
+                message: gift.message,
+                from: gift.from,
                 id: giftId,
                 x: 100 + Math.random() * (canvas.width - 200),
                 y: 100 + Math.random() * (canvas.height - 200),
@@ -968,7 +960,7 @@
             document.getElementById('messageText').textContent = gift.message || 'A gift for you! 💕';
             panel.classList.add('show', 'from-partner');
             
-            setTimeout(() => {
+            setTimeout(function() {
                 panel.classList.remove('show');
             }, 5000);
         }
@@ -977,7 +969,9 @@
             const notif = document.getElementById('notification');
             document.getElementById('notifText').textContent = text;
             notif.classList.add('show');
-            setTimeout(() => notif.classList.remove('show'), 3000);
+            setTimeout(function() {
+                notif.classList.remove('show');
+            }, 3000);
         }
         
         function toggleInventory() {
@@ -998,35 +992,32 @@
                 return;
             }
             
-            gameState.player.inventory.forEach((item) => {
+            gameState.player.inventory.forEach(function(item) {
                 const div = document.createElement('div');
                 div.className = 'inventory-item';
-                div.innerHTML = `
-                    <div class="emoji">${item.emoji}</div>
-                    <div class="name">${item.name}</div>
-                `;
-                div.onclick = () => viewItemDetails(item);
+                div.innerHTML = '<div class="emoji">' + item.emoji + '</div><div class="name">' + item.name + '</div>';
+                div.onclick = function() { viewItemDetails(item); };
                 grid.appendChild(div);
             });
         }
         
         function viewItemDetails(item) {
             const panel = document.getElementById('messagePanel');
-            document.querySelector('.message-sender').textContent = `💌 From ${item.from}`;
+            document.querySelector('.message-sender').textContent = '💌 From ' + item.from;
             document.getElementById('giftEmoji').textContent = item.emoji;
-            document.getElementById('messageText').innerHTML = `
-                <strong>${item.name}</strong><br>
-                <em style="color: #666; font-size: 0.9em;">"${item.message}"</em><br>
-                <small style="color: #999;">Received: ${item.date}</small>
-            `;
+            document.getElementById('messageText').innerHTML = 
+                '<strong>' + item.name + '</strong><br>' +
+                '<em style="color: #666; font-size: 0.9em;">"' + item.message + '"</em><br>' +
+                '<small style="color: #999;">Received: ' + item.date + '</small>';
             panel.classList.add('show');
-            setTimeout(() => panel.classList.remove('show'), 6000);
+            setTimeout(function() {
+                panel.classList.remove('show');
+            }, 6000);
         }
         
         function checkInteractions() {
-            const p = gameState.player;
             const area = gameState.areas[gameState.player.currentArea];
-            showNotification(`You're in the ${area.name.split(' ')[0]}! ${area.emoji}`);
+            showNotification('You\'re in the ' + area.name.split(' ')[0] + '! ' + area.emoji);
         }
         
         function saveInventory() {
