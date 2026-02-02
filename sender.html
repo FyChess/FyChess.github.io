@@ -1,0 +1,285 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Love 💕</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        h1 {
+            color: #d63384;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 700;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #f5576c;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .emoji-btn {
+            aspect-ratio: 1;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .emoji-btn:hover {
+            transform: scale(1.1);
+            border-color: #f5576c;
+        }
+        
+        .emoji-btn.selected {
+            background: #ffe0f0;
+            border-color: #f5576c;
+            transform: scale(1.1);
+        }
+        
+        .send-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+        
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .status.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .preview {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        
+        .preview-emoji {
+            font-size: 50px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Send Love 💌</h1>
+        <p class="subtitle">Send a gift to your special someone</p>
+        
+        <div class="form-group">
+            <label>Choose a Gift:</label>
+            <div class="emoji-grid" id="emojiGrid">
+                <button class="emoji-btn selected" data-emoji="🌹" data-name="Red Rose">🌹</button>
+                <button class="emoji-btn" data-emoji="🍫" data-name="Chocolates">🍫</button>
+                <button class="emoji-btn" data-emoji="💎" data-name="Diamond">💎</button>
+                <button class="emoji-btn" data-emoji="🧸" data-name="Teddy Bear">🧸</button>
+                <button class="emoji-btn" data-emoji="💌" data-name="Love Letter">💌</button>
+                <button class="emoji-btn" data-emoji="🎁" data-name="Mystery Box">🎁</button>
+                <button class="emoji-btn" data-emoji="🍓" data-name="Strawberries">🍓</button>
+                <button class="emoji-btn" data-emoji="☕" data-name="Coffee Date">☕</button>
+                <button class="emoji-btn" data-emoji="🎵" data-name="Love Song">🎵</button>
+                <button class="emoji-btn" data-emoji="🌟" data-name="Star">🌟</button>
+                <button class="emoji-btn" data-emoji="🍪" data-name="Cookies">🍪</button>
+                <button class="emoji-btn" data-emoji="💐" data-name="Bouquet">💐</button>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Your Message:</label>
+            <textarea id="message" placeholder="Write something sweet...">Thinking of you! 💕</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>Send To Area:</label>
+            <select id="areaSelect">
+                <option value="0">🌸 Garden of Beginnings</option>
+                <option value="1">☕ Cozy Café</option>
+                <option value="2">📚 Starlight Library</option>
+                <option value="3">🌙 Moonlight Park</option>
+                <option value="random">🎲 Surprise Me!</option>
+            </select>
+        </div>
+        
+        <div class="preview">
+            <div>Preview:</div>
+            <div class="preview-emoji" id="previewEmoji">🌹</div>
+            <div id="previewName">Red Rose</div>
+        </div>
+        
+        <button class="send-btn" onclick="sendGift()">Send Gift 💫</button>
+        
+        <div class="status" id="status"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <script>
+        // SAME FIREBASE CONFIG AS ABOVE
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "your-project.firebaseapp.com",
+            databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+            projectId: "your-project",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        let selectedEmoji = '🌹';
+        let selectedName = 'Red Rose';
+        
+        document.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedEmoji = btn.dataset.emoji;
+                selectedName = btn.dataset.name;
+                updatePreview();
+            });
+        });
+        
+        function updatePreview() {
+            document.getElementById('previewEmoji').textContent = selectedEmoji;
+            document.getElementById('previewName').textContent = selectedName;
+        }
+        
+        function sendGift() {
+            const message = document.getElementById('message').value;
+            const areaSelect = document.getElementById('areaSelect').value;
+            
+            const gift = {
+                emoji: selectedEmoji,
+                name: selectedName,
+                message: message,
+                from: 'Your Love',
+                timestamp: Date.now(),
+                area: areaSelect === 'random' ? Math.floor(Math.random() * 4) : parseInt(areaSelect)
+            };
+            
+            const btn = document.querySelector('.send-btn');
+            btn.disabled = true;
+            btn.textContent = 'Sending... 💫';
+            
+            database.ref('gifts').push(gift)
+                .then(() => {
+                    showStatus('Gift sent successfully! She\'ll find it in her world! 💕', 'success');
+                    btn.disabled = false;
+                    btn.textContent = 'Send Gift 💫';
+                    document.getElementById('message').value = '';
+                })
+                .catch((error) => {
+                    showStatus('Error sending gift: ' + error.message, 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Send Gift 💫';
+                });
+        }
+        
+        function showStatus(text, type) {
+            const status = document.getElementById('status');
+            status.textContent = text;
+            status.className = 'status ' + type;
+            setTimeout(() => {
+                status.className = 'status';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
