@@ -12,7 +12,10 @@
         padding: 0;
         box-sizing: border-box;
     }
-    
+    @keyframes fadeUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-30px); }
+}
     body {
         font-family: 'Nunito', sans-serif;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -504,20 +507,19 @@
     
     <script>
         // ==================== CONFIGURATION ====================
-        // REPLACE WITH YOUR FIREBASE CONFIG
-        // Get this from Firebase Console > Project Settings > General > Your apps > SDK setup and configuration
         const firebaseConfig = {
+            // YOUR FIREBASE CONFIG HERE
+       const firebaseConfig = {
               apiKey: "AIzaSyBmLF7qqeSotu6Rhkx3SXxxxhcqpHL7p2k",
               authDomain: "kova-85c6b.firebaseapp.com",
-              databaseURL: "https://kova-85c6b-default-rtdb.europe-west1.firebasedatabase.app",
+              databaseURL: "https://kova-85c6b-default-rtdb.europe-west1.firebasedatabase.app ",
               projectId: "kova-85c6b",
               storageBucket: "kova-85c6b.firebasestorage.app",
               messagingSenderId: "472789298075",
               appId: "1:472789298075:web:5e6a85924ea1fe269e0f3e",
-              measurementId: "G-FZR41E5810"
+              measurementId: "G-FZR41E5810" 
         };
         
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         
@@ -542,7 +544,10 @@
             gifts: [],
             messages: [],
             keys: {},
-            lastGiftCheck: 0
+            lastGiftCheck: 0,
+            touchStartX: 0,
+            touchStartY: 0,
+            isTouching: false
         };
         
         // ==================== CHARACTER CREATION ====================
@@ -590,7 +595,6 @@
             gameState.player.color = selectedColor;
             gameState.player.accessory = selectedAcc;
             
-            // Set emoji based on accessory
             if (selectedAcc === 'bow') gameState.player.emoji = '👧';
             else if (selectedAcc === 'flower') gameState.player.emoji = '🌺';
             else if (selectedAcc === 'crown') gameState.player.emoji = '👸';
@@ -608,6 +612,7 @@
         // ==================== GAME ENGINE ====================
         let canvas, ctx;
         let animationId;
+        let joystick = { active: false, dx: 0, dy: 0, originX: 0, originY: 0 };
         
         function initGame() {
             canvas = document.getElementById('gameCanvas');
@@ -616,17 +621,100 @@
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
             
-            // Input handling
+            // Keyboard controls
             window.addEventListener('keydown', (e) => {
                 gameState.keys[e.key] = true;
                 if (e.key === ' ') checkInteractions();
             });
             window.addEventListener('keyup', (e) => gameState.keys[e.key] = false);
             
+            // Touch controls
+            setupTouchControls();
+            
             // Start loops
             gameLoop();
             listenForGifts();
             loadInventory();
+        }
+        
+        function setupTouchControls() {
+            // Touch movement - joystick style
+            canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+            canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+            canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
+            
+            // Prevent scrolling on mobile
+            document.body.addEventListener('touchmove', (e) => {
+                if (e.target === canvas) e.preventDefault();
+            }, {passive: false});
+        }
+        
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            
+            // Check if touching right side (action button area)
+            if (touch.clientX - rect.left > canvas.width * 0.7 && 
+                touch.clientY - rect.top > canvas.height * 0.6) {
+                checkInteractions();
+                showTouchFeedback(touch.clientX - rect.left, touch.clientY - rect.top, '💫');
+                return;
+            }
+            
+            // Start joystick on left side
+            joystick.active = true;
+            joystick.originX = touch.clientX - rect.left;
+            joystick.originY = touch.clientY - rect.top;
+            joystick.dx = 0;
+            joystick.dy = 0;
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!joystick.active) return;
+            
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+            
+            const maxDist = 60;
+            let dx = touchX - joystick.originX;
+            let dy = touchY - joystick.originY;
+            
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > maxDist) {
+                dx = (dx / dist) * maxDist;
+                dy = (dy / dist) * maxDist;
+            }
+            
+            joystick.dx = dx / maxDist;
+            joystick.dy = dy / maxDist;
+        }
+        
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            joystick.active = false;
+            joystick.dx = 0;
+            joystick.dy = 0;
+        }
+        
+        function showTouchFeedback(x, y, emoji) {
+            // Visual feedback for touch
+            const feedback = document.createElement('div');
+            feedback.style.cssText = `
+                position: absolute;
+                left: ${x}px;
+                top: ${y}px;
+                font-size: 30px;
+                pointer-events: none;
+                animation: fadeUp 0.5s ease-out;
+                z-index: 1000;
+            `;
+            feedback.textContent = emoji;
+            document.getElementById('gameWorld').appendChild(feedback);
+            setTimeout(() => feedback.remove(), 500);
         }
         
         function resizeCanvas() {
@@ -642,30 +730,31 @@
         
         function update() {
             const speed = 3;
-            let moved = false;
             
+            // Keyboard movement
             if (gameState.keys['ArrowUp'] || gameState.keys['w'] || gameState.keys['W']) {
                 gameState.player.y -= speed;
-                moved = true;
             }
             if (gameState.keys['ArrowDown'] || gameState.keys['s'] || gameState.keys['S']) {
                 gameState.player.y += speed;
-                moved = true;
             }
             if (gameState.keys['ArrowLeft'] || gameState.keys['a'] || gameState.keys['A']) {
                 gameState.player.x -= speed;
-                moved = true;
             }
             if (gameState.keys['ArrowRight'] || gameState.keys['d'] || gameState.keys['D']) {
                 gameState.player.x += speed;
-                moved = true;
+            }
+            
+            // Touch/joystick movement
+            if (joystick.active) {
+                gameState.player.x += joystick.dx * speed;
+                gameState.player.y += joystick.dy * speed;
             }
             
             // Boundary check
             gameState.player.x = Math.max(30, Math.min(canvas.width - 30, gameState.player.x));
             gameState.player.y = Math.max(30, Math.min(canvas.height - 30, gameState.player.y));
             
-            // Area transition zones (portals)
             checkAreaTransitions();
         }
         
@@ -673,13 +762,11 @@
             const p = gameState.player;
             const margin = 50;
             
-            // Right edge - next area
             if (p.x > canvas.width - margin && gameState.player.currentArea < gameState.areas.length - 1) {
                 gameState.player.currentArea++;
                 p.x = margin + 10;
                 updateAreaDisplay();
             }
-            // Left edge - previous area
             else if (p.x < margin && gameState.player.currentArea > 0) {
                 gameState.player.currentArea--;
                 p.x = canvas.width - margin - 10;
@@ -699,17 +786,11 @@
             ctx.fillStyle = area.color;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Draw decorations based on area
             drawDecorations(area);
-            
-            // Draw portals
             drawPortals();
-            
-            // Draw player
             drawPlayer();
-            
-            // Draw gifts on ground
             drawGroundGifts();
+            drawTouchControls();
         }
         
         function drawDecorations(area) {
@@ -717,7 +798,6 @@
             ctx.textAlign = 'center';
             
             if (area.name.includes('Garden')) {
-                // Draw flowers
                 for (let i = 0; i < 5; i++) {
                     ctx.fillText('🌷', 100 + i * 150, 150);
                     ctx.fillText('🌻', 150 + i * 150, 400);
@@ -760,13 +840,11 @@
         function drawPlayer() {
             const p = gameState.player;
             
-            // Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.2)';
             ctx.beginPath();
             ctx.ellipse(p.x, p.y + 25, 20, 8, 0, 0, Math.PI * 2);
             ctx.fill();
             
-            // Character body (colored circle)
             ctx.fillStyle = p.color;
             ctx.beginPath();
             ctx.arc(p.x, p.y, 25, 0, Math.PI * 2);
@@ -775,26 +853,22 @@
             ctx.lineWidth = 2;
             ctx.stroke();
             
-            // Emoji face
             ctx.font = '35px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(p.emoji, p.x, p.y);
             
-            // Name tag
             ctx.font = '12px Nunito';
             ctx.fillStyle = '#333';
             ctx.fillText(p.name, p.x, p.y - 35);
         }
         
         function drawGroundGifts() {
-            // Check for gifts in current area
             gameState.gifts.forEach((gift, index) => {
                 if (gift.area === gameState.player.currentArea && !gift.collected) {
                     ctx.font = '35px Arial';
                     ctx.fillText(gift.emoji, gift.x, gift.y);
                     
-                    // Check collision
                     const dx = gameState.player.x - gift.x;
                     const dy = gameState.player.y - gift.y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
@@ -804,6 +878,48 @@
                     }
                 }
             });
+        }
+        
+        function drawTouchControls() {
+            // Only show on touch devices or when touching
+            if (!joystick.active && !('ontouchstart' in window)) return;
+            
+            if (joystick.active) {
+                // Draw joystick base
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(joystick.originX, joystick.originY, 60, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Draw joystick handle
+                const handleX = joystick.originX + joystick.dx * 60;
+                const handleY = joystick.originY + joystick.dy * 60;
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(handleX, handleY, 25, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 107, 157, 0.8)';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+            
+            // Draw action button hint
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(canvas.width - 60, canvas.height - 60, 40, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.font = '25px Arial';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.textAlign = 'center';
+            ctx.fillText('💫', canvas.width - 60, canvas.height - 55);
         }
         
         // ==================== GIFT SYSTEM ====================
@@ -820,7 +936,6 @@
         }
         
         function addGiftToWorld(gift) {
-            // Place gift in random position in current or specified area
             const area = gift.area || Math.floor(Math.random() * gameState.areas.length);
             const newGift = {
                 ...gift,
@@ -837,7 +952,6 @@
             const gift = gameState.gifts[index];
             gift.collected = true;
             
-            // Add to inventory
             gameState.player.inventory.push({
                 emoji: gift.emoji,
                 name: gift.name || 'Mystery Gift',
@@ -888,7 +1002,7 @@
                 return;
             }
             
-            gameState.player.inventory.forEach((item, index) => {
+            gameState.player.inventory.forEach((item) => {
                 const div = document.createElement('div');
                 div.className = 'inventory-item';
                 div.innerHTML = `
@@ -914,11 +1028,8 @@
         }
         
         function checkInteractions() {
-            // Check if near any interactable objects
             const p = gameState.player;
             const area = gameState.areas[gameState.player.currentArea];
-            
-            // Simple interaction - just show area description
             showNotification(`You're in the ${area.name.split(' ')[0]}! ${area.emoji}`);
         }
         
@@ -941,7 +1052,6 @@
             }
             if (savedPlayer) {
                 const p = JSON.parse(savedPlayer);
-                // Only load if same name (simple save slot system)
                 if (p.name === gameState.player.name) {
                     gameState.player.color = p.color;
                     gameState.player.accessory = p.accessory;
