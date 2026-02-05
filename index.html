@@ -200,6 +200,18 @@
             font-size: 14px;
         }
         
+        #weatherDisplay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 12px;
+            color: #333;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
         #inventoryBtn {
             position: absolute;
             top: 10px;
@@ -369,25 +381,6 @@
             color: #999;
         }
         
-        #controls {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(255,255,255,0.8);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 11px;
-            color: #666;
-        }
-        
-        kbd {
-            background: #eee;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-family: monospace;
-            font-size: 10px;
-        }
-        
         #notification {
             position: absolute;
             top: 60px;
@@ -460,17 +453,13 @@
             
             <div id="ui">
                 <div id="areaName">Garden of Beginnings</div>
+                <div id="weatherDisplay">☀️ Loading...</div>
                 <button id="inventoryBtn" class="ui-element" onclick="toggleInventory()">🎒</button>
                 
                 <div id="messagePanel">
                     <div class="message-sender">From Your Love</div>
                     <div class="gift-display" id="giftEmoji"></div>
                     <div id="messageText"></div>
-                </div>
-                
-                <div id="controls">
-                    Move: Arrows or WASD<br>
-                    Interact: Space
                 </div>
             </div>
             
@@ -494,7 +483,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <script>
-        // Firebase config - REPLACE WITH YOUR RESTRICTED KEY
+        // CONFIGURATION - SET YOUR API KEYS AND LOCATION HERE
         const firebaseConfig = {
             apiKey: "AIzaSyBmLF7qqeSotu6Rhkx3SXxxxhcqpHL7p2k",
             authDomain: "kova-85c6b.firebaseapp.com",
@@ -504,6 +493,11 @@
             messagingSenderId: "472789298075",
             appId: "1:472789298075:web:5e6a85924ea1fe269e0f3e"
         };
+        
+        const OPENWEATHER_API_KEY = "f426ebdd6fbd4d53798ec72083a8b627";
+        
+        // CHANGE THIS TO YOUR PREFERRED CITY
+        const WEATHER_LOCATION = "Loerrach";
         
         // Initialize Firebase
         let database = null;
@@ -539,7 +533,13 @@
             gifts: [],
             keys: {},
             collectedGiftIds: new Set(),
-            joystick: { active: false, dx: 0, dy: 0, originX: 0, originY: 0 }
+            joystick: { active: false, dx: 0, dy: 0, originX: 0, originY: 0 },
+            weather: {
+                type: 'sunny',
+                intensity: 0,
+                particles: [],
+                lastUpdate: 0
+            }
         };
         
         let selectedColor = '#ffdbac';
@@ -631,7 +631,179 @@
                 listenForGifts();
             }
             
+            initWeather();
             gameLoop();
+        }
+        
+        // WEATHER SYSTEM
+        function initWeather() {
+            if (OPENWEATHER_API_KEY !== "YOUR_OPENWEATHER_API_KEY") {
+                fetchRealWeather();
+            } else {
+                console.log("No weather API key, using random weather");
+                setRandomWeather();
+            }
+        }
+        
+        function fetchRealWeather() {
+            const url = 'https://api.openweathermap.org/data/2.5/weather?q=' + encodeURIComponent(WEATHER_LOCATION) + '&appid=' + OPENWEATHER_API_KEY + '&units=metric';
+            
+            fetch(url)
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data.cod === 200) {
+                        applyRealWeather(data);
+                    } else {
+                        console.log("Weather fetch failed, using random");
+                        setRandomWeather();
+                    }
+                })
+                .catch(function(error) {
+                    console.log("Weather fetch error:", error);
+                    setRandomWeather();
+                });
+        }
+        
+        function applyRealWeather(data) {
+            const condition = data.weather[0].main.toLowerCase();
+            const temp = data.main.temp;
+            const city = data.name;
+            
+            if (condition.indexOf('rain') !== -1 || condition.indexOf('drizzle') !== -1) {
+                setWeather('rain', city, temp);
+            } else if (condition.indexOf('snow') !== -1) {
+                setWeather('snow', city, temp);
+            } else if (condition.indexOf('thunder') !== -1 || condition.indexOf('storm') !== -1) {
+                setWeather('storm', city, temp);
+            } else if (condition.indexOf('cloud') !== -1) {
+                setWeather('cloudy', city, temp);
+            } else if (condition.indexOf('clear') !== -1 || condition.indexOf('sun') !== -1) {
+                setWeather('sunny', city, temp);
+            } else {
+                setWeather('sunny', city, temp);
+            }
+        }
+        
+        function setRandomWeather() {
+            const types = ['sunny', 'cloudy', 'rain', 'snow', 'storm'];
+            const randomType = types[Math.floor(Math.random() * types.length)];
+            setWeather(randomType, WEATHER_LOCATION, null);
+        }
+        
+        function setWeather(type, city, temp) {
+            gameState.weather.type = type;
+            gameState.weather.particles = [];
+            
+            const display = document.getElementById('weatherDisplay');
+            let tempText = temp !== null ? Math.round(temp) + '°C ' : '';
+            
+            switch(type) {
+                case 'sunny':
+                    display.textContent = tempText + '☀️ ' + city;
+                    break;
+                case 'cloudy':
+                    display.textContent = tempText + '☁️ ' + city;
+                    break;
+                case 'rain':
+                    display.textContent = tempText + '🌧️ ' + city;
+                    createParticles(100, 'rain');
+                    break;
+                case 'snow':
+                    display.textContent = tempText + '❄️ ' + city;
+                    createParticles(50, 'snow');
+                    break;
+                case 'storm':
+                    display.textContent = tempText + '⛈️ ' + city;
+                    createParticles(150, 'rain');
+                    break;
+            }
+        }
+        
+        function createParticles(count, type) {
+            for (let i = 0; i < count; i++) {
+                gameState.weather.particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    speed: type === 'rain' ? 10 + Math.random() * 10 : 1 + Math.random() * 2,
+                    size: type === 'rain' ? 2 + Math.random() * 2 : 3 + Math.random() * 3,
+                    type: type
+                });
+            }
+        }
+        
+        function updateWeather() {
+            const particles = gameState.weather.particles;
+            
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.y += p.speed;
+                
+                if (p.type === 'snow') {
+                    p.x += Math.sin(p.y * 0.01) * 0.5;
+                }
+                
+                if (p.y > canvas.height) {
+                    p.y = -10;
+                    p.x = Math.random() * canvas.width;
+                }
+            }
+        }
+        
+        function drawWeather() {
+            const particles = gameState.weather.particles;
+            
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                
+                if (p.type === 'rain') {
+                    ctx.strokeStyle = 'rgba(174, 194, 224, 0.6)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(p.x, p.y + 10);
+                    ctx.stroke();
+                } else if (p.type === 'snow') {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            if (gameState.weather.type === 'storm' && Math.random() < 0.02) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+        
+        function applyWeatherToArea(baseColor) {
+            const type = gameState.weather.type;
+            
+            if (type === 'sunny') return baseColor;
+            if (type === 'cloudy') return darkenColor(baseColor, 0.8);
+            if (type === 'rain') return darkenColor(baseColor, 0.6);
+            if (type === 'snow') return lightenColor(baseColor, 1.2);
+            if (type === 'storm') return darkenColor(baseColor, 0.5);
+            
+            return baseColor;
+        }
+        
+        function darkenColor(hex, factor) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            
+            return 'rgb(' + Math.floor(r * factor) + ',' + Math.floor(g * factor) + ',' + Math.floor(b * factor) + ')';
+        }
+        
+        function lightenColor(hex, factor) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            
+            return 'rgb(' + Math.min(255, Math.floor(r * factor)) + ',' + Math.min(255, Math.floor(g * factor)) + ',' + Math.min(255, Math.floor(b * factor)) + ')';
         }
         
         function loadCollectedGifts() {
@@ -743,6 +915,7 @@
             p.y = Math.max(30, Math.min(canvas.height - 30, p.y));
             
             checkAreaTransitions();
+            updateWeather();
         }
         
         function checkAreaTransitions() {
@@ -768,14 +941,16 @@
         
         function render() {
             const area = gameState.areas[gameState.player.currentArea];
+            const weatherColor = applyWeatherToArea(area.color);
             
-            ctx.fillStyle = area.color;
+            ctx.fillStyle = weatherColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             drawDecorations(area);
             drawPortals();
             drawPlayer();
             drawGroundGifts();
+            drawWeather();
             drawTouchControls();
         }
         
