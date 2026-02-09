@@ -414,9 +414,9 @@
             position: absolute;
             bottom: 10px;
             right: 10px;
-            width: 150px;
-            height: 100px;
-            background: rgba(0,0,0,0.7);
+            width: 120px;
+            height: 120px;
+            background: rgba(0,0,0,0.8);
             border-radius: 10px;
             border: 2px solid white;
         }
@@ -468,7 +468,7 @@
             <canvas id="gameCanvas"></canvas>
             
             <div id="ui">
-                <div id="areaName">Garden of Beginnings</div>
+                <div id="areaName">Town Center</div>
                 <div id="weatherDisplay">☀️ Loading...</div>
                 <button id="inventoryBtn" class="ui-element" onclick="toggleInventory()">🎒</button>
                 <canvas id="minimap" class="ui-element"></canvas>
@@ -514,10 +514,216 @@
         const OPENWEATHER_API_KEY = "f426ebdd6fbd4d53798ec72083a8b627";
         const WEATHER_LOCATION = "London";
         
-        // WORLD CONFIGURATION
-        const WORLD_WIDTH = 2400;
-        const WORLD_HEIGHT = 1600;
-        const AREA_WIDTH = 600;
+        // WORLD CONFIGURATION - 4x4 GRID
+        const AREA_SIZE = 500;
+        const WORLD_WIDTH = AREA_SIZE * 4;
+        const WORLD_HEIGHT = AREA_SIZE * 4;
+        
+        // Area definitions - Town center, wilderness edges
+        const AREA_TYPES = {
+            // Center (Town)
+            TOWN_CENTER: {
+                name: "Town Center",
+                color: "#E8D5C4",
+                type: "urban",
+                decorations: [
+                    {emoji: '🏛️', count: 2, types: ['building']},
+                    {emoji: '🌳', count: 8, types: ['tree']},
+                    {emoji: '⛲', count: 1, types: ['centerpiece']},
+                    {emoji: '🪑', count: 4, types: ['furniture']},
+                    {emoji: '🚶', count: 3, types: ['npc']}
+                ]
+            },
+            CAFE: {
+                name: "Cozy Corner Cafe",
+                color: "#DEB887",
+                type: "urban",
+                decorations: [
+                    {emoji: '☕', count: 3, types: ['item']},
+                    {emoji: '🥐', count: 2, types: ['item']},
+                    {emoji: '🪑', count: 6, types: ['furniture']},
+                    {emoji: '🌻', count: 4, types: ['flower']},
+                    {emoji: '🏠', count: 1, types: ['building']}
+                ]
+            },
+            SCHOOL: {
+                name: "Sunnydale School",
+                color: "#F5DEB3",
+                type: "urban",
+                decorations: [
+                    {emoji: '📚', count: 5, types: ['item']},
+                    {emoji: '🏫', count: 1, types: ['building']},
+                    {emoji: '🌳', count: 6, types: ['tree']},
+                    {emoji: '🎒', count: 2, types: ['item']},
+                    {emoji: '⚽', count: 2, types: ['item']}
+                ]
+            },
+            MUSEUM: {
+                name: "City Museum",
+                color: "#DDA0DD",
+                type: "urban",
+                decorations: [
+                    {emoji: '🏛️', count: 1, types: ['building']},
+                    {emoji: '🦕', count: 2, types: ['exhibit']},
+                    {emoji: '🖼️', count: 3, types: ['art']},
+                    {emoji: '📜', count: 2, types: ['item']},
+                    {emoji: '🗿', count: 2, types: ['statue']}
+                ]
+            },
+            SHOP: {
+                name: "Shopping District",
+                color: "#FFB6C1",
+                type: "urban",
+                decorations: [
+                    {emoji: '🏪', count: 3, types: ['shop']},
+                    {emoji: '🛍️', count: 4, types: ['item']},
+                    {emoji: '🌳', count: 4, types: ['tree']},
+                    {emoji: '🚶', count: 5, types: ['npc']},
+                    {emoji: '💐', count: 3, types: ['flower']}
+                ]
+            },
+            CASINO: {
+                name: "Lucky Star Casino",
+                color: "#FFD700",
+                type: "urban",
+                decorations: [
+                    {emoji: '🎰', count: 4, types: ['machine']},
+                    {emoji: '🎲', count: 3, types: ['item']},
+                    {emoji: '💎', count: 2, types: ['item']},
+                    {emoji: '🍸', count: 2, types: ['item']},
+                    {emoji: '🎭', count: 2, types: ['deco']}
+                ]
+            },
+            HOME: {
+                name: "Your Home",
+                color: "#FFE4E1",
+                type: "urban",
+                decorations: [
+                    {emoji: '🏠', count: 1, types: ['building']},
+                    {emoji: '🛋️', count: 2, types: ['furniture']},
+                    {emoji: '🌷', count: 6, types: ['flower']},
+                    {emoji: '🐕', count: 1, types: ['pet']},
+                    {emoji: '📬', count: 1, types: ['mailbox']}
+                ]
+            },
+            WATERPARK: {
+                name: "Splash Waterpark",
+                color: "#87CEEB",
+                type: "urban",
+                decorations: [
+                    {emoji: '🏊', count: 3, types: ['pool']},
+                    {emoji: '🌊', count: 4, types: ['water']},
+                    {emoji: '🛝', count: 2, types: ['slide']},
+                    {emoji: '🏖️', count: 3, types: ['beach']},
+                    {emoji: '🍦', count: 2, types: ['food']}
+                ]
+            },
+            // Edges (Wilderness)
+            MOUNTAINS: {
+                name: "Crystal Mountains",
+                color: "#708090",
+                type: "wild",
+                decorations: [
+                    {emoji: '⛰️', count: 6, types: ['mountain']},
+                    {emoji: '🏔️', count: 3, types: ['peak']},
+                    {emoji: '🌲', count: 8, types: ['tree']},
+                    {emoji: '🦅', count: 2, types: ['animal']},
+                    {emoji: '⛺', count: 1, types: ['camp']}
+                ]
+            },
+            DESERT: {
+                name: "Golden Desert",
+                color: "#F4A460",
+                type: "wild",
+                decorations: [
+                    {emoji: '🌵', count: 8, types: ['cactus']},
+                    {emoji: '🐪', count: 2, types: ['animal']},
+                    {emoji: '🏜️', count: 4, types: ['dune']},
+                    {emoji: '💀', count: 1, types: ['deco']},
+                    {emoji: '🦂', count: 2, types: ['animal']}
+                ]
+            },
+            JUNGLE: {
+                name: "Emerald Jungle",
+                color: "#228B22",
+                type: "wild",
+                decorations: [
+                    {emoji: '🌴', count: 10, types: ['palm']},
+                    {emoji: '🐒', count: 3, types: ['animal']},
+                    {emoji: '🌺', count: 6, types: ['flower']},
+                    {emoji: '🦜', count: 2, types: ['bird']},
+                    {emoji: '🗿', count: 1, types: ['ruins']}
+                ]
+            },
+            RIVER: {
+                name: "Serenity River",
+                color: "#4682B4",
+                type: "wild",
+                decorations: [
+                    {emoji: '🌊', count: 8, types: ['water']},
+                    {emoji: '🎣', count: 2, types: ['activity']},
+                    {emoji: '🦆', count: 4, types: ['animal']},
+                    {emoji: '🌿', count: 6, types: ['bush']},
+                    {emoji: '🪨', count: 4, types: ['rock']}
+                ]
+            },
+            BEACH: {
+                name: "Paradise Beach",
+                color: "#F0E68C",
+                type: "wild",
+                decorations: [
+                    {emoji: '🏖️', count: 5, types: ['sand']},
+                    {emoji: '🐚', count: 6, types: ['shell']},
+                    {emoji: '🌴', count: 4, types: ['palm']},
+                    {emoji: '🦀', count: 3, types: ['animal']},
+                    {emoji: '⛱️', count: 2, types: ['umbrella']}
+                ]
+            },
+            FOREST: {
+                name: "Whispering Forest",
+                color: "#006400",
+                type: "wild",
+                decorations: [
+                    {emoji: '🌲', count: 15, types: ['tree']},
+                    {emoji: '🦌', count: 2, types: ['animal']},
+                    {emoji: '🍄', count: 5, types: ['mushroom']},
+                    {emoji: '🦉', count: 2, types: ['bird']},
+                    {emoji: '🏕️', count: 1, types: ['camp']}
+                ]
+            },
+            VOLCANO: {
+                name: "Magma Peak",
+                color: "#8B0000",
+                type: "wild",
+                decorations: [
+                    {emoji: '🌋', count: 1, types: ['volcano']},
+                    {emoji: '🔥', count: 6, types: ['fire']},
+                    {emoji: '🪨', count: 8, types: ['rock']},
+                    {emoji: '☠️', count: 1, types: ['warning']},
+                    {emoji: '💎', count: 3, types: ['crystal']}
+                ]
+            },
+            SNOW: {
+                name: "Frost Valley",
+                color: "#B0E0E6",
+                type: "wild",
+                decorations: [
+                    {emoji: '❄️', count: 8, types: ['snow']},
+                    {emoji: '⛄', count: 3, types: ['snowman']},
+                    {emoji: '🎿', count: 2, types: ['sport']},
+                    {emoji: '🦌', count: 2, types: ['animal']},
+                    {emoji: '🏔️', count: 3, types: ['peak']}
+                ]
+            }
+        };
+        
+        // 4x4 Grid layout - Town in center, wilderness on edges
+        const WORLD_GRID = [
+            [AREA_TYPES.MOUNTAINS, AREA_TYPES.RIVER,     AREA_TYPES.FOREST,  AREA_TYPES.SNOW],
+            [AREA_TYPES.DESERT,    AREA_TYPES.TOWN_CENTER, AREA_TYPES.CAFE,    AREA_TYPES.JUNGLE],
+            [AREA_TYPES.BEACH,     AREA_TYPES.SCHOOL,    AREA_TYPES.MUSEUM,  AREA_TYPES.VOLCANO],
+            [AREA_TYPES.HOME,      AREA_TYPES.SHOP,      AREA_TYPES.CASINO,  AREA_TYPES.WATERPARK]
+        ];
         
         // Initialize Firebase
         let database = null;
@@ -532,11 +738,45 @@
             console.log("Firebase offline mode");
         }
         
+        // Build areas from grid
+        function buildAreas() {
+            const areas = [];
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 4; col++) {
+                    const areaType = WORLD_GRID[row][col];
+                    const area = {
+                        name: areaType.name,
+                        color: areaType.color,
+                        type: areaType.type,
+                        x: col * AREA_SIZE,
+                        y: row * AREA_SIZE,
+                        width: AREA_SIZE,
+                        height: AREA_SIZE,
+                        decorations: []
+                    };
+                    
+                    // Generate decorations spread throughout area
+                    areaType.decorations.forEach(function(deco) {
+                        for (let i = 0; i < deco.count; i++) {
+                            area.decorations.push({
+                                emoji: deco.emoji,
+                                x: area.x + 30 + Math.random() * (AREA_SIZE - 60),
+                                y: area.y + 30 + Math.random() * (AREA_SIZE - 60)
+                            });
+                        }
+                    });
+                    
+                    areas.push(area);
+                }
+            }
+            return areas;
+        }
+        
         // Game state
         const gameState = {
             player: {
-                x: WORLD_WIDTH / 2,
-                y: WORLD_HEIGHT / 2,
+                x: WORLD_WIDTH / 2 + AREA_SIZE / 2,
+                y: WORLD_HEIGHT / 2 + AREA_SIZE / 2,
                 screenX: 0,
                 screenY: 0,
                 name: '',
@@ -544,7 +784,7 @@
                 accessory: '',
                 emoji: '🧍',
                 inventory: [],
-                currentArea: 0
+                currentArea: null
             },
             camera: {
                 x: 0,
@@ -554,64 +794,7 @@
                 width: WORLD_WIDTH,
                 height: WORLD_HEIGHT
             },
-            areas: [
-                { 
-                    name: "Garden of Beginnings", 
-                    color: "#90EE90",
-                    x: 0,
-                    width: AREA_WIDTH,
-                    decorations: [
-                        {type: 'flower', x: 100, y: 200, emoji: '🌷'},
-                        {type: 'flower', x: 250, y: 350, emoji: '🌻'},
-                        {type: 'tree', x: 50, y: 100, emoji: '🌳'},
-                        {type: 'tree', x: 450, y: 150, emoji: '🌳'},
-                        {type: 'flower', x: 300, y: 500, emoji: '🌹'},
-                        {type: 'bush', x: 150, y: 600, emoji: '🌿'}
-                    ]
-                },
-                { 
-                    name: "Cozy Cafe", 
-                    color: "#DEB887",
-                    x: AREA_WIDTH,
-                    width: AREA_WIDTH,
-                    decorations: [
-                        {type: 'chair', x: 100, y: 300, emoji: '🪑'},
-                        {type: 'chair', x: 250, y: 300, emoji: '🪑'},
-                        {type: 'chair', x: 400, y: 300, emoji: '🪑'},
-                        {type: 'coffee', x: 175, y: 250, emoji: '☕'},
-                        {type: 'croissant', x: 325, y: 250, emoji: '🥐'},
-                        {type: 'lamp', x: 250, y: 150, emoji: '🪔'}
-                    ]
-                },
-                { 
-                    name: "Starlight Library", 
-                    color: "#DDA0DD",
-                    x: AREA_WIDTH * 2,
-                    width: AREA_WIDTH,
-                    decorations: [
-                        {type: 'books', x: 100, y: 200, emoji: '📚'},
-                        {type: 'books', x: 300, y: 200, emoji: '📚'},
-                        {type: 'books', x: 500, y: 200, emoji: '📚'},
-                        {type: 'lamp', x: 300, y: 150, emoji: '🕯️'},
-                        {type: 'scroll', x: 150, y: 500, emoji: '📜'},
-                        {type: 'glasses', x: 450, y: 400, emoji: '👓'}
-                    ]
-                },
-                { 
-                    name: "Moonlight Park", 
-                    color: "#191970",
-                    x: AREA_WIDTH * 3,
-                    width: AREA_WIDTH,
-                    decorations: [
-                        {type: 'moon', x: 300, y: 100, emoji: '🌙'},
-                        {type: 'star', x: 100, y: 150, emoji: '⭐'},
-                        {type: 'star', x: 500, y: 150, emoji: '⭐'},
-                        {type: 'tree', x: 100, y: 500, emoji: '🌲'},
-                        {type: 'tree', x: 500, y: 500, emoji: '🌲'},
-                        {type: 'bench', x: 300, y: 400, emoji: '🪑'}
-                    ]
-                }
-            ],
+            areas: buildAreas(),
             gifts: [],
             keys: {},
             collectedGiftIds: new Set(),
@@ -619,12 +802,6 @@
             weather: {
                 type: 'sunny',
                 particles: []
-            },
-            transition: {
-                active: false,
-                progress: 0,
-                fromArea: 0,
-                toArea: 0
             }
         };
         
@@ -729,27 +906,29 @@
             const canvasWidth = canvas.width;
             const canvasHeight = canvas.height;
             
-            // Target camera position (centered on player)
             let targetCamX = p.x - canvasWidth / 2;
             let targetCamY = p.y - canvasHeight / 2;
             
-            // Clamp camera to world bounds
             targetCamX = Math.max(0, Math.min(targetCamX, gameState.world.width - canvasWidth));
             targetCamY = Math.max(0, Math.min(targetCamY, gameState.world.height - canvasHeight));
             
-            // Smooth camera movement
             gameState.camera.x += (targetCamX - gameState.camera.x) * 0.1;
             gameState.camera.y += (targetCamY - gameState.camera.y) * 0.1;
             
-            // Calculate player screen position (always center)
             p.screenX = p.x - gameState.camera.x;
             p.screenY = p.y - gameState.camera.y;
             
-            // Determine current area based on player position
-            const newArea = Math.floor(p.x / AREA_WIDTH);
-            if (newArea !== p.currentArea && newArea >= 0 && newArea < gameState.areas.length) {
-                p.currentArea = newArea;
-                updateAreaName();
+            // Determine current area
+            const col = Math.floor(p.x / AREA_SIZE);
+            const row = Math.floor(p.y / AREA_SIZE);
+            const areaIndex = row * 4 + col;
+            
+            if (areaIndex >= 0 && areaIndex < gameState.areas.length) {
+                const newArea = gameState.areas[areaIndex];
+                if (gameState.player.currentArea !== newArea) {
+                    gameState.player.currentArea = newArea;
+                    updateAreaName();
+                }
             }
         }
         
@@ -757,7 +936,9 @@
             const areaNameEl = document.getElementById('areaName');
             areaNameEl.classList.add('fade');
             setTimeout(function() {
-                areaNameEl.textContent = gameState.areas[gameState.player.currentArea].name;
+                if (gameState.player.currentArea) {
+                    areaNameEl.textContent = gameState.player.currentArea.name;
+                }
                 areaNameEl.classList.remove('fade');
             }, 500);
         }
@@ -871,19 +1052,16 @@
             }
         }
         
-        function getWeatherColor(baseColor, areaIndex) {
+        function getWeatherColor(baseColor) {
             const type = gameState.weather.type;
-            const area = gameState.areas[areaIndex];
-            
-            // Blend area color with weather effect
             let factor = 1;
             if (type === 'cloudy') factor = 0.8;
             else if (type === 'rain') factor = 0.6;
             else if (type === 'snow') factor = 1.2;
             else if (type === 'storm') factor = 0.5;
             
-            if (type === 'snow') return lightenColor(area.color, factor);
-            return darkenColor(area.color, factor);
+            if (type === 'snow') return lightenColor(baseColor, factor);
+            return darkenColor(baseColor, factor);
         }
         
         function darkenColor(hex, factor) {
@@ -974,8 +1152,8 @@
         function resizeCanvas() {
             canvas.width = document.getElementById('gameWorld').clientWidth;
             canvas.height = document.getElementById('gameWorld').clientHeight;
-            minimapCanvas.width = 150;
-            minimapCanvas.height = 100;
+            minimapCanvas.width = 120;
+            minimapCanvas.height = 120;
         }
         
         function gameLoop() {
@@ -998,7 +1176,6 @@
                 p.y += gameState.joystick.dy * speed;
             }
             
-            // Keep player in world bounds
             p.x = Math.max(20, Math.min(gameState.world.width - 20, p.x));
             p.y = Math.max(20, Math.min(gameState.world.height - 20, p.y));
             
@@ -1007,71 +1184,46 @@
         }
         
         function render() {
-            // Clear screen
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Draw world areas with smooth transitions
             drawWorld();
-            
-            // Draw decorations
             drawDecorations();
-            
-            // Draw gifts
             drawGifts();
-            
-            // Draw player (centered)
             drawPlayer();
-            
-            // Draw weather overlay
             drawWeather();
-            
-            // Draw touch controls
             drawTouchControls();
-            
-            // Draw minimap
             drawMinimap();
         }
         
         function drawWorld() {
             const camX = gameState.camera.x;
             const camY = gameState.camera.y;
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
             
-            // Draw each visible area
-            gameState.areas.forEach(function(area, index) {
-                const areaScreenX = area.x - camX;
+            gameState.areas.forEach(function(area) {
+                const screenX = area.x - camX;
+                const screenY = area.y - camY;
                 
-                // Skip if not visible
-                if (areaScreenX + area.width < 0 || areaScreenX > canvasWidth) return;
+                if (screenX + area.width < 0 || screenX > canvas.width ||
+                    screenY + area.height < 0 || screenY > canvas.height) return;
                 
-                // Get weather-affected color
-                const color = getWeatherColor(area.color, index);
+                const color = getWeatherColor(area.color);
                 
-                // Draw area background
                 ctx.fillStyle = color;
-                ctx.fillRect(Math.max(0, areaScreenX), 0, 
-                    Math.min(area.width, canvasWidth - areaScreenX), canvasHeight);
+                ctx.fillRect(screenX, screenY, area.width, area.height);
                 
-                // Draw area boundary lines
-                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                // Area border
+                ctx.strokeStyle = 'rgba(255,255,255,0.2)';
                 ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(areaScreenX + area.width, 0);
-                ctx.lineTo(areaScreenX + area.width, canvas.height);
-                ctx.stroke();
+                ctx.strokeRect(screenX, screenY, area.width, area.height);
                 
-                // Draw area name on ground if visible
-                if (areaScreenX > -100 && areaScreenX < canvasWidth) {
-                    ctx.fillStyle = 'rgba(255,255,255,0.2)';
-                    ctx.font = 'bold 40px Nunito';
+                // Area name if visible and large enough
+                if (area.width > 100 && area.height > 100) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+                    ctx.font = 'bold 24px Nunito';
                     ctx.textAlign = 'center';
-                    ctx.save();
-                    ctx.translate(areaScreenX + area.width/2, canvas.height/2);
-                    ctx.rotate(-Math.PI/6);
-                    ctx.fillText(area.name, 0, 0);
-                    ctx.restore();
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(area.name, screenX + area.width/2, screenY + area.height/2);
                 }
             });
         }
@@ -1080,7 +1232,7 @@
             const camX = gameState.camera.x;
             const camY = gameState.camera.y;
             
-            ctx.font = '30px Arial';
+            ctx.font = '28px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
@@ -1089,9 +1241,8 @@
                     const screenX = dec.x - camX;
                     const screenY = dec.y - camY;
                     
-                    // Only draw if visible
-                    if (screenX > -50 && screenX < canvas.width + 50 &&
-                        screenY > -50 && screenY < canvas.height + 50) {
+                    if (screenX > -30 && screenX < canvas.width + 30 &&
+                        screenY > -30 && screenY < canvas.height + 30) {
                         ctx.fillText(dec.emoji, screenX, screenY);
                     }
                 });
@@ -1102,7 +1253,7 @@
             const camX = gameState.camera.x;
             const camY = gameState.camera.y;
             
-            ctx.font = '35px Arial';
+            ctx.font = '32px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
@@ -1112,15 +1263,12 @@
                 const screenX = gift.x - camX;
                 const screenY = gift.y - camY;
                 
-                // Only draw if visible
                 if (screenX > -50 && screenX < canvas.width + 50 &&
                     screenY > -50 && screenY < canvas.height + 50) {
                     
-                    // Floating animation
                     const floatY = Math.sin(Date.now() * 0.003 + gift.x) * 5;
                     ctx.fillText(gift.emoji, screenX, screenY + floatY);
                     
-                    // Check collision with player (center of screen)
                     const dx = gift.x - gameState.player.x;
                     const dy = gift.y - gameState.player.y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
@@ -1135,13 +1283,11 @@
         function drawPlayer() {
             const p = gameState.player;
             
-            // Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
             ctx.beginPath();
             ctx.ellipse(p.screenX, p.screenY + 25, 20, 8, 0, 0, Math.PI * 2);
             ctx.fill();
             
-            // Body
             ctx.fillStyle = p.color;
             ctx.beginPath();
             ctx.arc(p.screenX, p.screenY, 25, 0, Math.PI * 2);
@@ -1150,13 +1296,11 @@
             ctx.lineWidth = 2;
             ctx.stroke();
             
-            // Emoji
             ctx.font = '35px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(p.emoji, p.screenX, p.screenY);
             
-            // Name
             ctx.font = 'bold 12px Nunito';
             ctx.fillStyle = '#fff';
             ctx.strokeStyle = '#000';
@@ -1189,7 +1333,6 @@
                 ctx.stroke();
             }
             
-            // Action button
             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.beginPath();
             ctx.arc(canvas.width - 60, canvas.height - 60, 40, 0, Math.PI * 2);
@@ -1206,39 +1349,32 @@
         
         function drawMinimap() {
             const mm = minimapCtx;
-            const worldW = gameState.world.width;
-            const worldH = gameState.world.height;
             const mapW = minimapCanvas.width;
             const mapH = minimapCanvas.height;
             
-            // Clear
-            mm.fillStyle = 'rgba(0,0,0,0.8)';
+            mm.fillStyle = 'rgba(0,0,0,0.9)';
             mm.fillRect(0, 0, mapW, mapH);
             
-            // Scale factors
-            const scaleX = mapW / worldW;
-            const scaleY = mapH / worldH;
+            const scaleX = mapW / WORLD_WIDTH;
+            const scaleY = mapH / WORLD_HEIGHT;
             
             // Draw areas
-            gameState.areas.forEach(function(area, index) {
+            gameState.areas.forEach(function(area) {
                 mm.fillStyle = area.color;
-                mm.fillRect(area.x * scaleX, 0, area.width * scaleX, mapH);
+                mm.fillRect(area.x * scaleX, area.y * scaleY, area.width * scaleX, area.height * scaleY);
                 
-                // Highlight current area
-                if (index === gameState.player.currentArea) {
-                    mm.strokeStyle = '#fff';
-                    mm.lineWidth = 2;
-                    mm.strokeRect(area.x * scaleX, 0, area.width * scaleX, mapH);
-                }
+                mm.strokeStyle = 'rgba(255,255,255,0.3)';
+                mm.lineWidth = 1;
+                mm.strokeRect(area.x * scaleX, area.y * scaleY, area.width * scaleX, area.height * scaleY);
             });
             
-            // Draw player position
+            // Draw player
             mm.fillStyle = '#ff0000';
             mm.beginPath();
-            mm.arc(gameState.player.x * scaleX, gameState.player.y * scaleY, 4, 0, Math.PI * 2);
+            mm.arc(gameState.player.x * scaleX, gameState.player.y * scaleY, 3, 0, Math.PI * 2);
             mm.fill();
             
-            // Draw view rectangle
+            // Draw view rect
             mm.strokeStyle = 'rgba(255,255,255,0.5)';
             mm.lineWidth = 1;
             mm.strokeRect(
@@ -1263,7 +1399,6 @@
         }
         
         function addGiftToWorld(gift, giftId) {
-            // Place gift in random area
             const areaIndex = Math.floor(Math.random() * gameState.areas.length);
             const area = gameState.areas[areaIndex];
             
@@ -1273,8 +1408,8 @@
                 message: gift.message,
                 from: gift.from,
                 id: giftId,
-                x: area.x + 50 + Math.random() * (area.width - 100),
-                y: 100 + Math.random() * (gameState.world.height - 200),
+                x: area.x + 30 + Math.random() * (area.width - 60),
+                y: area.y + 30 + Math.random() * (area.height - 60),
                 collected: false
             };
             gameState.gifts.push(newGift);
@@ -1363,8 +1498,10 @@
         }
         
         function checkInteractions() {
-            const area = gameState.areas[gameState.player.currentArea];
-            showNotification('You are in ' + area.name);
+            const area = gameState.player.currentArea;
+            if (area) {
+                showNotification('You are in ' + area.name);
+            }
         }
         
         function saveInventory() {
