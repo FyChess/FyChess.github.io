@@ -217,6 +217,17 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
+        #timeDisplay {
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+        
         #inventoryBtn {
             position: absolute;
             top: 10px;
@@ -253,9 +264,70 @@
             50% { transform: scale(1.3); opacity: 0.7; }
         }
         
+        #dialogueBox {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            display: none;
+            pointer-events: auto;
+            border: 2px solid #gold;
+        }
+        
+        #dialogueBox.show {
+            display: block;
+            animation: slideUp 0.3s;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+        
+        .dialogue-speaker {
+            color: #FFD700;
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .dialogue-text {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+        
+        .dialogue-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .dialogue-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        
+        .dialogue-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
         #messagePanel {
             position: absolute;
-            bottom: 80px;
+            bottom: 180px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255,255,255,0.95);
@@ -414,8 +486,8 @@
             position: absolute;
             bottom: 10px;
             right: 10px;
-            width: 120px;
-            height: 120px;
+            width: 150px;
+            height: 150px;
             background: rgba(0,0,0,0.8);
             border-radius: 10px;
             border: 2px solid white;
@@ -470,8 +542,15 @@
             <div id="ui">
                 <div id="areaName">Town Center</div>
                 <div id="weatherDisplay">☀️ Loading...</div>
+                <div id="timeDisplay">🌅 Morning</div>
                 <button id="inventoryBtn" class="ui-element" onclick="toggleInventory()">🎒</button>
                 <canvas id="minimap" class="ui-element"></canvas>
+                
+                <div id="dialogueBox">
+                    <div class="dialogue-speaker">Hitotsume</div>
+                    <div class="dialogue-text" id="dialogueText"></div>
+                    <div class="dialogue-options" id="dialogueOptions"></div>
+                </div>
                 
                 <div id="messagePanel">
                     <div class="message-sender">From Your Love</div>
@@ -514,10 +593,10 @@
         const OPENWEATHER_API_KEY = "f426ebdd6fbd4d53798ec72083a8b627";
         const WEATHER_LOCATION = "London";
         
-        // WORLD CONFIGURATION - 4x4 GRID
-        const AREA_SIZE = 500;
-        const WORLD_WIDTH = AREA_SIZE * 4;
-        const WORLD_HEIGHT = AREA_SIZE * 4;
+        // WORLD CONFIGURATION - 4x4 GRID WITH BIGGER AREAS
+        const AREA_SIZE = 1200; // Much bigger areas
+        const WORLD_WIDTH = AREA_SIZE * 4;  // 4800
+        const WORLD_HEIGHT = AREA_SIZE * 4; // 4800
         
         // Area definitions - Town center, wilderness edges
         const AREA_TYPES = {
@@ -527,11 +606,12 @@
                 color: "#E8D5C4",
                 type: "urban",
                 decorations: [
-                    {emoji: '🏛️', count: 2, types: ['building']},
-                    {emoji: '🌳', count: 8, types: ['tree']},
-                    {emoji: '⛲', count: 1, types: ['centerpiece']},
-                    {emoji: '🪑', count: 4, types: ['furniture']},
-                    {emoji: '🚶', count: 3, types: ['npc']}
+                    {emoji: '🏛️', count: 3, types: ['building']},
+                    {emoji: '🌳', count: 20, types: ['tree']},
+                    {emoji: '⛲', count: 2, types: ['centerpiece']},
+                    {emoji: '🪑', count: 10, types: ['furniture']},
+                    {emoji: '🚶', count: 12, types: ['npc']},
+                    {emoji: '🌷', count: 15, types: ['flower']}
                 ]
             },
             CAFE: {
@@ -539,11 +619,12 @@
                 color: "#DEB887",
                 type: "urban",
                 decorations: [
-                    {emoji: '☕', count: 3, types: ['item']},
-                    {emoji: '🥐', count: 2, types: ['item']},
-                    {emoji: '🪑', count: 6, types: ['furniture']},
-                    {emoji: '🌻', count: 4, types: ['flower']},
-                    {emoji: '🏠', count: 1, types: ['building']}
+                    {emoji: '☕', count: 8, types: ['item']},
+                    {emoji: '🥐', count: 6, types: ['item']},
+                    {emoji: '🪑', count: 15, types: ['furniture']},
+                    {emoji: '🌻', count: 12, types: ['flower']},
+                    {emoji: '🏠', count: 2, types: ['building']},
+                    {emoji: '📚', count: 5, types: ['item']}
                 ]
             },
             SCHOOL: {
@@ -551,11 +632,12 @@
                 color: "#F5DEB3",
                 type: "urban",
                 decorations: [
-                    {emoji: '📚', count: 5, types: ['item']},
-                    {emoji: '🏫', count: 1, types: ['building']},
-                    {emoji: '🌳', count: 6, types: ['tree']},
-                    {emoji: '🎒', count: 2, types: ['item']},
-                    {emoji: '⚽', count: 2, types: ['item']}
+                    {emoji: '📚', count: 15, types: ['item']},
+                    {emoji: '🏫', count: 2, types: ['building']},
+                    {emoji: '🌳', count: 18, types: ['tree']},
+                    {emoji: '🎒', count: 6, types: ['item']},
+                    {emoji: '⚽', count: 5, types: ['item']},
+                    {emoji: '🎨', count: 4, types: ['item']}
                 ]
             },
             MUSEUM: {
@@ -563,11 +645,12 @@
                 color: "#DDA0DD",
                 type: "urban",
                 decorations: [
-                    {emoji: '🏛️', count: 1, types: ['building']},
-                    {emoji: '🦕', count: 2, types: ['exhibit']},
-                    {emoji: '🖼️', count: 3, types: ['art']},
-                    {emoji: '📜', count: 2, types: ['item']},
-                    {emoji: '🗿', count: 2, types: ['statue']}
+                    {emoji: '🏛️', count: 2, types: ['building']},
+                    {emoji: '🦕', count: 4, types: ['exhibit']},
+                    {emoji: '🖼️', count: 8, types: ['art']},
+                    {emoji: '📜', count: 6, types: ['item']},
+                    {emoji: '🗿', count: 5, types: ['statue']},
+                    {emoji: '💎', count: 3, types: ['crystal']}
                 ]
             },
             SHOP: {
@@ -575,11 +658,12 @@
                 color: "#FFB6C1",
                 type: "urban",
                 decorations: [
-                    {emoji: '🏪', count: 3, types: ['shop']},
-                    {emoji: '🛍️', count: 4, types: ['item']},
-                    {emoji: '🌳', count: 4, types: ['tree']},
-                    {emoji: '🚶', count: 5, types: ['npc']},
-                    {emoji: '💐', count: 3, types: ['flower']}
+                    {emoji: '🏪', count: 6, types: ['shop']},
+                    {emoji: '🛍️', count: 12, types: ['item']},
+                    {emoji: '🌳', count: 10, types: ['tree']},
+                    {emoji: '🚶', count: 15, types: ['npc']},
+                    {emoji: '💐', count: 8, types: ['flower']},
+                    {emoji: '🎁', count: 6, types: ['item']}
                 ]
             },
             CASINO: {
@@ -587,11 +671,12 @@
                 color: "#FFD700",
                 type: "urban",
                 decorations: [
-                    {emoji: '🎰', count: 4, types: ['machine']},
-                    {emoji: '🎲', count: 3, types: ['item']},
-                    {emoji: '💎', count: 2, types: ['item']},
-                    {emoji: '🍸', count: 2, types: ['item']},
-                    {emoji: '🎭', count: 2, types: ['deco']}
+                    {emoji: '🎰', count: 10, types: ['machine']},
+                    {emoji: '🎲', count: 8, types: ['item']},
+                    {emoji: '💎', count: 5, types: ['item']},
+                    {emoji: '🍸', count: 6, types: ['item']},
+                    {emoji: '🎭', count: 4, types: ['deco']},
+                    {emoji: '💰', count: 8, types: ['item']}
                 ]
             },
             HOME: {
@@ -599,11 +684,12 @@
                 color: "#FFE4E1",
                 type: "urban",
                 decorations: [
-                    {emoji: '🏠', count: 1, types: ['building']},
-                    {emoji: '🛋️', count: 2, types: ['furniture']},
-                    {emoji: '🌷', count: 6, types: ['flower']},
-                    {emoji: '🐕', count: 1, types: ['pet']},
-                    {emoji: '📬', count: 1, types: ['mailbox']}
+                    {emoji: '🏠', count: 2, types: ['building']},
+                    {emoji: '🛋️', count: 5, types: ['furniture']},
+                    {emoji: '🌷', count: 18, types: ['flower']},
+                    {emoji: '🐕', count: 2, types: ['pet']},
+                    {emoji: '📬', count: 2, types: ['mailbox']},
+                    {emoji: '🚗', count: 1, types: ['vehicle']}
                 ]
             },
             WATERPARK: {
@@ -611,11 +697,12 @@
                 color: "#87CEEB",
                 type: "urban",
                 decorations: [
-                    {emoji: '🏊', count: 3, types: ['pool']},
-                    {emoji: '🌊', count: 4, types: ['water']},
-                    {emoji: '🛝', count: 2, types: ['slide']},
-                    {emoji: '🏖️', count: 3, types: ['beach']},
-                    {emoji: '🍦', count: 2, types: ['food']}
+                    {emoji: '🏊', count: 8, types: ['pool']},
+                    {emoji: '🌊', count: 10, types: ['water']},
+                    {emoji: '🛝', count: 5, types: ['slide']},
+                    {emoji: '🏖️', count: 8, types: ['beach']},
+                    {emoji: '🍦', count: 6, types: ['food']},
+                    {emoji: '☂️', count: 12, types: ['deco']}
                 ]
             },
             // Edges (Wilderness)
@@ -624,11 +711,12 @@
                 color: "#708090",
                 type: "wild",
                 decorations: [
-                    {emoji: '⛰️', count: 6, types: ['mountain']},
-                    {emoji: '🏔️', count: 3, types: ['peak']},
-                    {emoji: '🌲', count: 8, types: ['tree']},
-                    {emoji: '🦅', count: 2, types: ['animal']},
-                    {emoji: '⛺', count: 1, types: ['camp']}
+                    {emoji: '⛰️', count: 15, types: ['mountain']},
+                    {emoji: '🏔️', count: 8, types: ['peak']},
+                    {emoji: '🌲', count: 25, types: ['tree']},
+                    {emoji: '🦅', count: 5, types: ['animal']},
+                    {emoji: '⛺', count: 3, types: ['camp']},
+                    {emoji: '💎', count: 4, types: ['crystal']}
                 ]
             },
             DESERT: {
@@ -636,11 +724,12 @@
                 color: "#F4A460",
                 type: "wild",
                 decorations: [
-                    {emoji: '🌵', count: 8, types: ['cactus']},
-                    {emoji: '🐪', count: 2, types: ['animal']},
-                    {emoji: '🏜️', count: 4, types: ['dune']},
-                    {emoji: '💀', count: 1, types: ['deco']},
-                    {emoji: '🦂', count: 2, types: ['animal']}
+                    {emoji: '🌵', count: 25, types: ['cactus']},
+                    {emoji: '🐪', count: 5, types: ['animal']},
+                    {emoji: '🏜️', count: 12, types: ['dune']},
+                    {emoji: '💀', count: 3, types: ['deco']},
+                    {emoji: '🦂', count: 6, types: ['animal']},
+                    {emoji: '🏺', count: 4, types: ['ruins']}
                 ]
             },
             JUNGLE: {
@@ -648,11 +737,12 @@
                 color: "#228B22",
                 type: "wild",
                 decorations: [
-                    {emoji: '🌴', count: 10, types: ['palm']},
-                    {emoji: '🐒', count: 3, types: ['animal']},
-                    {emoji: '🌺', count: 6, types: ['flower']},
-                    {emoji: '🦜', count: 2, types: ['bird']},
-                    {emoji: '🗿', count: 1, types: ['ruins']}
+                    {emoji: '🌴', count: 30, types: ['palm']},
+                    {emoji: '🐒', count: 8, types: ['animal']},
+                    {emoji: '🌺', count: 20, types: ['flower']},
+                    {emoji: '🦜', count: 6, types: ['bird']},
+                    {emoji: '🗿', count: 3, types: ['ruins']},
+                    {emoji: '🐍', count: 4, types: ['animal']}
                 ]
             },
             RIVER: {
@@ -660,11 +750,12 @@
                 color: "#4682B4",
                 type: "wild",
                 decorations: [
-                    {emoji: '🌊', count: 8, types: ['water']},
-                    {emoji: '🎣', count: 2, types: ['activity']},
-                    {emoji: '🦆', count: 4, types: ['animal']},
-                    {emoji: '🌿', count: 6, types: ['bush']},
-                    {emoji: '🪨', count: 4, types: ['rock']}
+                    {emoji: '🌊', count: 20, types: ['water']},
+                    {emoji: '🎣', count: 5, types: ['activity']},
+                    {emoji: '🦆', count: 10, types: ['animal']},
+                    {emoji: '🌿', count: 18, types: ['bush']},
+                    {emoji: '🪨', count: 12, types: ['rock']},
+                    {emoji: '🚣', count: 3, types: ['boat']}
                 ]
             },
             BEACH: {
@@ -672,11 +763,12 @@
                 color: "#F0E68C",
                 type: "wild",
                 decorations: [
-                    {emoji: '🏖️', count: 5, types: ['sand']},
-                    {emoji: '🐚', count: 6, types: ['shell']},
-                    {emoji: '🌴', count: 4, types: ['palm']},
-                    {emoji: '🦀', count: 3, types: ['animal']},
-                    {emoji: '⛱️', count: 2, types: ['umbrella']}
+                    {emoji: '🏖️', count: 15, types: ['sand']},
+                    {emoji: '🐚', count: 20, types: ['shell']},
+                    {emoji: '🌴', count: 12, types: ['palm']},
+                    {emoji: '🦀', count: 8, types: ['animal']},
+                    {emoji: '⛱️', count: 6, types: ['umbrella']},
+                    {emoji: '🐙', count: 3, types: ['animal']}
                 ]
             },
             FOREST: {
@@ -684,11 +776,12 @@
                 color: "#006400",
                 type: "wild",
                 decorations: [
-                    {emoji: '🌲', count: 15, types: ['tree']},
-                    {emoji: '🦌', count: 2, types: ['animal']},
-                    {emoji: '🍄', count: 5, types: ['mushroom']},
-                    {emoji: '🦉', count: 2, types: ['bird']},
-                    {emoji: '🏕️', count: 1, types: ['camp']}
+                    {emoji: '🌲', count: 40, types: ['tree']},
+                    {emoji: '🦌', count: 6, types: ['animal']},
+                    {emoji: '🍄', count: 15, types: ['mushroom']},
+                    {emoji: '🦉', count: 5, types: ['bird']},
+                    {emoji: '🏕️', count: 3, types: ['camp']},
+                    {emoji: '🦊', count: 4, types: ['animal']}
                 ]
             },
             VOLCANO: {
@@ -696,11 +789,12 @@
                 color: "#8B0000",
                 type: "wild",
                 decorations: [
-                    {emoji: '🌋', count: 1, types: ['volcano']},
-                    {emoji: '🔥', count: 6, types: ['fire']},
-                    {emoji: '🪨', count: 8, types: ['rock']},
-                    {emoji: '☠️', count: 1, types: ['warning']},
-                    {emoji: '💎', count: 3, types: ['crystal']}
+                    {emoji: '🌋', count: 2, types: ['volcano']},
+                    {emoji: '🔥', count: 15, types: ['fire']},
+                    {emoji: '🪨', count: 20, types: ['rock']},
+                    {emoji: '☠️', count: 3, types: ['warning']},
+                    {emoji: '💎', count: 8, types: ['crystal']},
+                    {emoji: '🐉', count: 1, types: ['legendary']}
                 ]
             },
             SNOW: {
@@ -708,11 +802,12 @@
                 color: "#B0E0E6",
                 type: "wild",
                 decorations: [
-                    {emoji: '❄️', count: 8, types: ['snow']},
-                    {emoji: '⛄', count: 3, types: ['snowman']},
-                    {emoji: '🎿', count: 2, types: ['sport']},
-                    {emoji: '🦌', count: 2, types: ['animal']},
-                    {emoji: '🏔️', count: 3, types: ['peak']}
+                    {emoji: '❄️', count: 25, types: ['snow']},
+                    {emoji: '⛄', count: 8, types: ['snowman']},
+                    {emoji: '🎿', count: 5, types: ['sport']},
+                    {emoji: '🦌', count: 6, types: ['animal']},
+                    {emoji: '🏔️', count: 10, types: ['peak']},
+                    {emoji: '🧊', count: 12, types: ['ice']}
                 ]
             }
         };
@@ -738,6 +833,55 @@
             console.log("Firebase offline mode");
         }
         
+        // NPC - HITOTSUME
+        const HITOTSUME = {
+            name: "Hitotsume",
+            emoji: "🎩",
+            homeArea: {row: 2, col: 0}, // Whispering Forest
+            casinoArea: {row: 3, col: 2}, // Casino
+            x: 0,
+            y: 0,
+            targetX: 0,
+            targetY: 0,
+            state: 'idle', // idle, walking, at_casino
+            lastMove: 0,
+            moveInterval: 5000, // 5 seconds between moves
+            dialogue: {
+                forest: [
+                    "The trees whisper secrets that only the patient can hear...",
+                    "A little bit of pondering, eyes closed, the world inversed; take your time on this earth.",
+                    "In this forest, even shadows have stories to tell.",
+                    "The dice of fate roll differently here. Have you felt it?",
+                    "Silence is not empty; it is full of answers.",
+                    "I come here to remember what the city makes me forget."
+                ],
+                casino: [
+                    "The lights flicker like dying stars... intoxicating, isn't it?",
+                    "Even in chaos, there is a pattern. You just need to close your eyes to see it.",
+                    "Fortune favors those who understand that luck is merely probability taken personally.",
+                    "I wonder... does the house truly always win?",
+                    "The spinning wheels remind me of how time moves - circular, yet never returning to the same place.",
+                    "Risk is the price of admission to the theater of chance."
+                ],
+                evening: [
+                    "The boundary between day and night grows thin...",
+                    "Twilight is when the world holds its breath.",
+                    "Soon, the dice will call my name louder than the wind."
+                ],
+                night: [
+                    "The stars above and the neon below - both lies we tell ourselves to feel less alone.",
+                    "In darkness, even a single eye sees clearly.",
+                    "The night is young, and so are we... forever young in this loop of chance."
+                ],
+                giftResponse: [
+                    "A gift? How... unexpected. Like finding a four-leaf clover in a desert.",
+                    "You have my gratitude. Perhaps fortune will smile upon you in return.",
+                    "This reminds me that not all transactions require dice.",
+                    "Interesting... I shall ponder the meaning of this offering."
+                ]
+            }
+        };
+        
         // Build areas from grid
         function buildAreas() {
             const areas = [];
@@ -752,7 +896,9 @@
                         y: row * AREA_SIZE,
                         width: AREA_SIZE,
                         height: AREA_SIZE,
-                        decorations: []
+                        decorations: [],
+                        row: row,
+                        col: col
                     };
                     
                     // Generate decorations spread throughout area
@@ -760,8 +906,8 @@
                         for (let i = 0; i < deco.count; i++) {
                             area.decorations.push({
                                 emoji: deco.emoji,
-                                x: area.x + 30 + Math.random() * (AREA_SIZE - 60),
-                                y: area.y + 30 + Math.random() * (AREA_SIZE - 60)
+                                x: area.x + 50 + Math.random() * (AREA_SIZE - 100),
+                                y: area.y + 50 + Math.random() * (AREA_SIZE - 100)
                             });
                         }
                     });
@@ -775,8 +921,8 @@
         // Game state
         const gameState = {
             player: {
-                x: WORLD_WIDTH / 2 + AREA_SIZE / 2,
-                y: WORLD_HEIGHT / 2 + AREA_SIZE / 2,
+                x: WORLD_WIDTH / 2,
+                y: WORLD_HEIGHT / 2,
                 screenX: 0,
                 screenY: 0,
                 name: '',
@@ -802,6 +948,15 @@
             weather: {
                 type: 'sunny',
                 particles: []
+            },
+            time: {
+                hour: 10,
+                minute: 0,
+                period: 'morning'
+            },
+            dialogue: {
+                active: false,
+                currentNPC: null
             }
         };
         
@@ -860,6 +1015,13 @@
             else if (selectedAcc === 'glasses') gameState.player.emoji = '🤓';
             else if (selectedAcc === 'hat') gameState.player.emoji = '🕵️';
             
+            // Initialize Hitotsume position in forest
+            const forestArea = gameState.areas.find(a => a.row === 2 && a.col === 0);
+            HITOTSUME.x = forestArea.x + AREA_SIZE / 2;
+            HITOTSUME.y = forestArea.y + AREA_SIZE / 2;
+            HITOTSUME.targetX = HITOTSUME.x;
+            HITOTSUME.targetY = HITOTSUME.y;
+            
             document.getElementById('charCreator').classList.add('hidden');
             setTimeout(function() {
                 document.getElementById('charCreator').style.display = 'none';
@@ -881,7 +1043,13 @@
             
             window.addEventListener('keydown', function(e) {
                 gameState.keys[e.key] = true;
-                if (e.key === ' ') checkInteractions();
+                if (e.key === ' ') {
+                    if (gameState.dialogue.active) {
+                        closeDialogue();
+                    } else {
+                        checkInteractions();
+                    }
+                }
             });
             
             window.addEventListener('keyup', function(e) {
@@ -898,6 +1066,182 @@
             
             initWeather();
             gameLoop();
+        }
+        
+        // TIME SYSTEM
+        function updateTime() {
+            gameState.time.minute += 1;
+            if (gameState.time.minute >= 60) {
+                gameState.time.minute = 0;
+                gameState.time.hour += 1;
+                if (gameState.time.hour >= 24) {
+                    gameState.time.hour = 0;
+                }
+            }
+            
+            // Update period
+            const h = gameState.time.hour;
+            if (h >= 5 && h < 12) gameState.time.period = 'morning';
+            else if (h >= 12 && h < 17) gameState.time.period = 'afternoon';
+            else if (h >= 17 && h < 21) gameState.time.period = 'evening';
+            else gameState.time.period = 'night';
+            
+            // Update display
+            const timeEmoji = h >= 6 && h < 18 ? '☀️' : '🌙';
+            document.getElementById('timeDisplay').textContent = timeEmoji + ' ' + gameState.time.period;
+            
+            // Update Hitotsume behavior based on time
+            updateHitotsumeAI();
+        }
+        
+        // HITOTSUME AI
+        function updateHitotsumeAI() {
+            const hour = gameState.time.hour;
+            const shouldBeAtCasino = hour >= 20 || hour <= 2; // Night gambling
+            
+            const casinoArea = gameState.areas.find(a => a.row === 3 && a.col === 2);
+            const forestArea = gameState.areas.find(a => a.row === 2 && a.col === 0);
+            
+            if (shouldBeAtCasino && HITOTSUME.state !== 'at_casino') {
+                // Move to casino
+                HITOTSUME.state = 'at_casino';
+                HITOTSUME.targetX = casinoArea.x + AREA_SIZE / 2 + (Math.random() - 0.5) * 200;
+                HITOTSUME.targetY = casinoArea.y + AREA_SIZE / 2 + (Math.random() - 0.5) * 200;
+            } else if (!shouldBeAtCasino && HITOTSUME.state === 'at_casino') {
+                // Return to forest
+                HITOTSUME.state = 'idle';
+                HITOTSUME.targetX = forestArea.x + AREA_SIZE / 2 + (Math.random() - 0.5) * 300;
+                HITOTSUME.targetY = forestArea.y + AREA_SIZE / 2 + (Math.random() - 0.5) * 300;
+            }
+            
+            // Random wandering when idle
+            const now = Date.now();
+            if (HITOTSUME.state === 'idle' && now - HITOTSUME.lastMove > HITOTSUME.moveInterval) {
+                if (Math.random() < 0.3) { // 30% chance to move
+                    const range = 200;
+                    HITOTSUME.targetX = Math.max(forestArea.x + 50, Math.min(forestArea.x + AREA_SIZE - 50, 
+                        HITOTSUME.x + (Math.random() - 0.5) * range));
+                    HITOTSUME.targetY = Math.max(forestArea.y + 50, Math.min(forestArea.y + AREA_SIZE - 50, 
+                        HITOTSUME.y + (Math.random() - 0.5) * range));
+                }
+                HITOTSUME.lastMove = now;
+            }
+            
+            // Smooth movement
+            const dx = HITOTSUME.targetX - HITOTSUME.x;
+            const dy = HITOTSUME.targetY - HITOTSUME.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist > 2) {
+                HITOTSUME.x += (dx / dist) * 1.5;
+                HITOTSUME.y += (dy / dist) * 1.5;
+            }
+        }
+        
+        function drawHitotsume() {
+            const camX = gameState.camera.x;
+            const camY = gameState.camera.y;
+            const screenX = HITOTSUME.x - camX;
+            const screenY = HITOTSUME.y - camY;
+            
+            // Only draw if visible
+            if (screenX < -50 || screenX > canvas.width + 50 || 
+                screenY < -50 || screenY > canvas.height + 50) return;
+            
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(screenX, screenY + 30, 25, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Body (tall silhouette)
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(screenX - 20, screenY - 50, 40, 80);
+            
+            // Coat
+            ctx.fillStyle = '#0d0d0d';
+            ctx.beginPath();
+            ctx.moveTo(screenX - 25, screenY + 20);
+            ctx.lineTo(screenX - 35, screenY + 80);
+            ctx.lineTo(screenX + 35, screenY + 80);
+            ctx.lineTo(screenX + 25, screenY + 20);
+            ctx.fill();
+            
+            // Head/Top Hat
+            ctx.font = '40px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🎩', screenX, screenY - 35);
+            
+            // Mysterious aura
+            ctx.fillStyle = 'rgba(147, 112, 219, 0.2)';
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, 40 + Math.sin(Date.now() * 0.002) * 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Name tag when close
+            const p = gameState.player;
+            const distToPlayer = Math.sqrt((HITOTSUME.x - p.x) ** 2 + (HITOTSUME.y - p.y) ** 2);
+            if (distToPlayer < 100) {
+                ctx.font = 'bold 11px Nunito';
+                ctx.fillStyle = '#FFD700';
+                ctx.fillText('Hitotsume', screenX, screenY - 70);
+                
+                // Interaction hint
+                ctx.font = '10px Nunito';
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.fillText('[SPACE] Talk', screenX, screenY - 55);
+            }
+        }
+        
+        function talkToHitotsume() {
+            const hour = gameState.time.hour;
+            let lines = [];
+            
+            // Select appropriate dialogue
+            if (HITOTSUME.state === 'at_casino') {
+                lines = HITOTSUME.dialogue.casino;
+            } else if (hour >= 17 && hour < 21) {
+                lines = HITOTSUME.dialogue.evening;
+            } else if (hour >= 21 || hour < 5) {
+                lines = HITOTSUME.dialogue.night;
+            } else {
+                lines = HITOTSUME.dialogue.forest;
+            }
+            
+            const randomLine = lines[Math.floor(Math.random() * lines.length)];
+            
+            showDialogue(HITOTSUME.name, randomLine, [
+                {text: "Tell me more", action: () => talkToHitotsume()},
+                {text: "Goodbye", action: () => closeDialogue()}
+            ]);
+        }
+        
+        function showDialogue(speaker, text, options) {
+            gameState.dialogue.active = true;
+            gameState.dialogue.currentNPC = speaker;
+            
+            document.querySelector('.dialogue-speaker').textContent = speaker;
+            document.getElementById('dialogueText').textContent = text;
+            
+            const optionsContainer = document.getElementById('dialogueOptions');
+            optionsContainer.innerHTML = '';
+            
+            options.forEach(function(opt) {
+                const btn = document.createElement('button');
+                btn.className = 'dialogue-btn';
+                btn.textContent = opt.text;
+                btn.onclick = opt.action;
+                optionsContainer.appendChild(btn);
+            });
+            
+            document.getElementById('dialogueBox').classList.add('show');
+        }
+        
+        function closeDialogue() {
+            gameState.dialogue.active = false;
+            gameState.dialogue.currentNPC = null;
+            document.getElementById('dialogueBox').classList.remove('show');
         }
         
         // CAMERA SYSTEM
@@ -1108,7 +1452,7 @@
             
             if (touch.clientX - rect.left > canvas.width * 0.7 && 
                 touch.clientY - rect.top > canvas.height * 0.6) {
-                checkInteractions();
+                if (!gameState.dialogue.active) checkInteractions();
                 return;
             }
             
@@ -1152,8 +1496,8 @@
         function resizeCanvas() {
             canvas.width = document.getElementById('gameWorld').clientWidth;
             canvas.height = document.getElementById('gameWorld').clientHeight;
-            minimapCanvas.width = 120;
-            minimapCanvas.height = 120;
+            minimapCanvas.width = 150;
+            minimapCanvas.height = 150;
         }
         
         function gameLoop() {
@@ -1181,6 +1525,9 @@
             
             updateCamera();
             updateWeather();
+            
+            // Update time every ~2 seconds
+            if (Math.random() < 0.008) updateTime();
         }
         
         function render() {
@@ -1190,6 +1537,7 @@
             drawWorld();
             drawDecorations();
             drawGifts();
+            drawHitotsume();
             drawPlayer();
             drawWeather();
             drawTouchControls();
@@ -1212,12 +1560,10 @@
                 ctx.fillStyle = color;
                 ctx.fillRect(screenX, screenY, area.width, area.height);
                 
-                // Area border
                 ctx.strokeStyle = 'rgba(255,255,255,0.2)';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(screenX, screenY, area.width, area.height);
                 
-                // Area name if visible and large enough
                 if (area.width > 100 && area.height > 100) {
                     ctx.fillStyle = 'rgba(255,255,255,0.15)';
                     ctx.font = 'bold 24px Nunito';
@@ -1358,7 +1704,6 @@
             const scaleX = mapW / WORLD_WIDTH;
             const scaleY = mapH / WORLD_HEIGHT;
             
-            // Draw areas
             gameState.areas.forEach(function(area) {
                 mm.fillStyle = area.color;
                 mm.fillRect(area.x * scaleX, area.y * scaleY, area.width * scaleX, area.height * scaleY);
@@ -1368,13 +1713,18 @@
                 mm.strokeRect(area.x * scaleX, area.y * scaleY, area.width * scaleX, area.height * scaleY);
             });
             
+            // Draw Hitotsume on minimap
+            mm.fillStyle = '#FFD700';
+            mm.beginPath();
+            mm.arc(HITOTSUME.x * scaleX, HITOTSUME.y * scaleY, 4, 0, Math.PI * 2);
+            mm.fill();
+            
             // Draw player
             mm.fillStyle = '#ff0000';
             mm.beginPath();
             mm.arc(gameState.player.x * scaleX, gameState.player.y * scaleY, 3, 0, Math.PI * 2);
             mm.fill();
             
-            // Draw view rect
             mm.strokeStyle = 'rgba(255,255,255,0.5)';
             mm.lineWidth = 1;
             mm.strokeRect(
@@ -1408,8 +1758,8 @@
                 message: gift.message,
                 from: gift.from,
                 id: giftId,
-                x: area.x + 30 + Math.random() * (area.width - 60),
-                y: area.y + 30 + Math.random() * (area.height - 60),
+                x: area.x + 50 + Math.random() * (area.width - 100),
+                y: area.y + 50 + Math.random() * (area.height - 100),
                 collected: false
             };
             gameState.gifts.push(newGift);
@@ -1457,6 +1807,8 @@
         }
         
         function toggleInventory() {
+            if (gameState.dialogue.active) return;
+            
             const modal = document.getElementById('inventoryModal');
             modal.classList.toggle('show');
             if (modal.classList.contains('show')) {
@@ -1474,7 +1826,7 @@
                 return;
             }
             
-            gameState.player.inventory.forEach(function(item) {
+            gameState.areas.forEach(function(item) {
                 const div = document.createElement('div');
                 div.className = 'inventory-item';
                 div.innerHTML = '<div class="emoji">' + item.emoji + '</div><div class="name">' + item.name + '</div>';
@@ -1498,6 +1850,19 @@
         }
         
         function checkInteractions() {
+            const p = gameState.player;
+            
+            // Check distance to Hitotsume
+            const dx = HITOTSUME.x - p.x;
+            const dy = HITOTSUME.y - p.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            
+            if (dist < 80) {
+                talkToHitotsume();
+                return;
+            }
+            
+            // Default area notification
             const area = gameState.player.currentArea;
             if (area) {
                 showNotification('You are in ' + area.name);
